@@ -4,6 +4,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/hooks/use-toast";
 import { insertSubmissionSchema, type InsertSubmission } from "@shared/schema";
 import { Link } from "wouter";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,6 +29,10 @@ export default function AgentDashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [submissions, setSubmissions] = useState<DemoSubmission[]>([]);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [submissionsSearch, setSubmissionsSearch] = useState("");
+  const [selectedSubmission, setSelectedSubmission] = useState<DemoSubmission | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
   useEffect(() => {
     setUserRole(localStorage.getItem('userRole'));
@@ -228,25 +234,35 @@ export default function AgentDashboard() {
                         <FormControl>
                           <RadioGroup
                             onValueChange={field.onChange}
-                            defaultValue={field.value}
+                            value={field.value}
                             className="grid grid-cols-2 gap-4"
                           >
-                            <label className="relative block cursor-pointer" data-testid="radio-feeding">
-                              <RadioGroupItem value="feeding" id="feeding" className="sr-only peer" />
-                              <div className="peer-checked:border-primary peer-checked:bg-primary/10 peer-checked:shadow-md border-2 border-input rounded-lg p-4 transition-all duration-200 hover:bg-accent/50 hover:border-accent flex flex-col items-center justify-center min-h-[100px] bg-card">
+                            <div className="relative">
+                              <RadioGroupItem value="feeding" id="feeding" className="sr-only" />
+                              <Label 
+                                htmlFor="feeding" 
+                                className="relative block cursor-pointer border-2 border-input rounded-lg p-4 transition-all duration-200 hover:bg-accent/50 hover:border-accent flex flex-col items-center justify-center min-h-[100px] bg-card data-[state=checked]:border-primary data-[state=checked]:bg-primary/10 data-[state=checked]:shadow-md"
+                                data-testid="radio-feeding"
+                                data-state={field.value === 'feeding' ? 'checked' : 'unchecked'}
+                              >
                                 <i className="fas fa-plug text-primary text-2xl mb-2"></i>
                                 <div className="text-sm font-semibold" dir="rtl">تغذية</div>
                                 <div className="text-xs text-muted-foreground mt-1">Feeding</div>
-                              </div>
-                            </label>
-                            <label className="relative block cursor-pointer" data-testid="radio-maintenance">
-                              <RadioGroupItem value="maintenance" id="maintenance" className="sr-only peer" />
-                              <div className="peer-checked:border-amber-500 peer-checked:bg-amber-50 peer-checked:shadow-md border-2 border-input rounded-lg p-4 transition-all duration-200 hover:bg-accent/50 hover:border-accent flex flex-col items-center justify-center min-h-[100px] bg-card">
+                              </Label>
+                            </div>
+                            <div className="relative">
+                              <RadioGroupItem value="maintenance" id="maintenance" className="sr-only" />
+                              <Label 
+                                htmlFor="maintenance" 
+                                className="relative block cursor-pointer border-2 border-input rounded-lg p-4 transition-all duration-200 hover:bg-accent/50 hover:border-accent flex flex-col items-center justify-center min-h-[100px] bg-card data-[state=checked]:border-amber-500 data-[state=checked]:bg-amber-50 data-[state=checked]:shadow-md"
+                                data-testid="radio-maintenance"
+                                data-state={field.value === 'maintenance' ? 'checked' : 'unchecked'}
+                              >
                                 <i className="fas fa-wrench text-amber-600 text-2xl mb-2"></i>
                                 <div className="text-sm font-semibold" dir="rtl">صيانة</div>
                                 <div className="text-xs text-muted-foreground mt-1">Maintenance</div>
-                              </div>
-                            </label>
+                              </Label>
+                            </div>
                           </RadioGroup>
                         </FormControl>
                         <FormMessage />
@@ -293,75 +309,195 @@ export default function AgentDashboard() {
           </Card>
           
           {/* Recent Submissions */}
-          <Card className="mt-6 shadow-lg border-0">
+          <Card className="mt-6 shadow-lg border-0" data-testid="card-recent-submissions">
             <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-t-lg">
-              <CardTitle className="text-lg font-bold text-gray-800 flex items-center">
-                <i className="fas fa-history mr-2 text-blue-500"></i>
-                Recent Submissions
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg font-bold text-gray-800 flex items-center">
+                  <i className="fas fa-history mr-2 text-blue-500"></i>
+                  Recent Submissions ({submissions.length})
+                </CardTitle>
+              </div>
+              <div className="mt-4">
+                <div className="relative">
+                  <i className="fas fa-search absolute left-3 top-3 text-muted-foreground"></i>
+                  <Input
+                    placeholder="Search submissions..."
+                    value={submissionsSearch}
+                    onChange={(e) => setSubmissionsSearch(e.target.value)}
+                    className="pl-10"
+                    data-testid="input-submissions-search"
+                  />
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="p-0">
-              <div className="divide-y divide-border">
-                {submissions.length > 0 ? (
-                  submissions.slice(0, 5).map((submission: DemoSubmission) => (
-                    <div key={submission.id} className="p-4 hover:bg-accent/50 transition-colors" data-testid={`card-submission-${submission.id}`}>
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <h4 className="font-medium text-card-foreground" data-testid={`text-client-${submission.id}`}>
-                            {submission.clientName}
-                          </h4>
-                          <p className="text-sm text-muted-foreground" data-testid={`text-government-${submission.id}`}>
-                            {submission.government}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            ATM: <span data-testid={`text-atm-${submission.id}`}>{submission.atmCode}</span>
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <div 
-                            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                              submission.serviceType === 'feeding' 
-                                ? 'bg-primary/10 text-primary' 
-                                : 'bg-accent/10 text-accent'
-                            }`}
-                            dir="rtl"
-                            data-testid={`badge-type-${submission.id}`}
-                          >
-                            {submission.serviceType === 'feeding' ? 'تغذية' : 'صيانة'}
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-1" data-testid={`text-time-${submission.id}`}>
-                            {submission.createdAt ? new Date(submission.createdAt).toLocaleTimeString() : 'N/A'}
-                          </p>
-                        </div>
+              <ScrollArea className="h-[400px]">
+                <div className="divide-y divide-border">
+                  {(() => {
+                    const filtered = submissions.filter(sub => 
+                      sub.clientName.toLowerCase().includes(submissionsSearch.toLowerCase()) ||
+                      sub.atmCode.toLowerCase().includes(submissionsSearch.toLowerCase()) ||
+                      sub.government.toLowerCase().includes(submissionsSearch.toLowerCase())
+                    );
+                    const startIndex = (currentPage - 1) * itemsPerPage;
+                    const paginatedSubmissions = filtered.slice(startIndex, startIndex + itemsPerPage);
+                    
+                    return paginatedSubmissions.length > 0 ? (
+                      paginatedSubmissions.map((submission: DemoSubmission) => (
+                        <Dialog key={submission.id}>
+                          <DialogTrigger asChild>
+                            <div className="p-4 hover:bg-blue-50 transition-colors cursor-pointer border-l-4 border-transparent hover:border-blue-500" data-testid={`card-submission-${submission.id}`}>
+                              <div className="flex justify-between items-start">
+                                <div className="flex-1">
+                                  <h4 className="font-semibold text-gray-800" data-testid={`text-client-${submission.id}`}>
+                                    {submission.clientName}
+                                  </h4>
+                                  <p className="text-sm text-gray-600" data-testid={`text-government-${submission.id}`}>
+                                    <i className="fas fa-map-marker-alt mr-1"></i>
+                                    {submission.government}
+                                  </p>
+                                  <p className="text-xs text-gray-500">
+                                    ATM: <span className="font-mono bg-gray-100 px-1 rounded" data-testid={`text-atm-${submission.id}`}>{submission.atmCode}</span>
+                                  </p>
+                                </div>
+                                <div className="text-right">
+                                  <div 
+                                    className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium shadow-sm ${
+                                      submission.serviceType === 'feeding' 
+                                        ? 'bg-blue-100 text-blue-800 border border-blue-200' 
+                                        : 'bg-amber-100 text-amber-800 border border-amber-200'
+                                    }`}
+                                    dir="rtl"
+                                    data-testid={`badge-type-${submission.id}`}
+                                  >
+                                    {submission.serviceType === 'feeding' ? 'تغذية' : 'صيانة'}
+                                  </div>
+                                  <p className="text-xs text-gray-500 mt-1 flex items-center" data-testid={`text-time-${submission.id}`}>
+                                    <i className="fas fa-clock mr-1"></i>
+                                    {submission.createdAt ? new Date(submission.createdAt).toLocaleTimeString() : 'N/A'}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-md">
+                            <DialogHeader>
+                              <DialogTitle>Submission Details</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4">
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <label className="text-sm font-medium text-gray-600">Client Name</label>
+                                  <p className="font-semibold">{submission.clientName}</p>
+                                </div>
+                                <div>
+                                  <label className="text-sm font-medium text-gray-600">Government</label>
+                                  <p className="font-semibold">{submission.government}</p>
+                                </div>
+                                <div>
+                                  <label className="text-sm font-medium text-gray-600">ATM Code</label>
+                                  <p className="font-mono bg-gray-100 px-2 py-1 rounded">{submission.atmCode}</p>
+                                </div>
+                                <div>
+                                  <label className="text-sm font-medium text-gray-600">Service Type</label>
+                                  <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                    submission.serviceType === 'feeding' 
+                                      ? 'bg-blue-100 text-blue-800' 
+                                      : 'bg-amber-100 text-amber-800'
+                                  }`} dir="rtl">
+                                    {submission.serviceType === 'feeding' ? 'تغذية' : 'صيانة'}
+                                  </div>
+                                </div>
+                              </div>
+                              <div>
+                                <label className="text-sm font-medium text-gray-600">Submitted At</label>
+                                <p className="font-semibold text-lg">
+                                  {submission.createdAt ? new Date(submission.createdAt).toLocaleString() : 'N/A'}
+                                </p>
+                              </div>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                      ))
+                    ) : (
+                      <div className="p-8 text-center text-muted-foreground" data-testid="text-no-submissions">
+                        <i className="fas fa-search text-4xl mb-4 opacity-50"></i>
+                        <p>No submissions found</p>
+                        <p className="text-sm">Try adjusting your search terms</p>
                       </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="p-4 text-center text-muted-foreground" data-testid="text-no-submissions">
-                    No submissions yet
+                    );
+                  })()}
+                </div>
+              </ScrollArea>
+              {submissions.length > itemsPerPage && (
+                <div className="p-4 border-t bg-gray-50 flex items-center justify-between">
+                  <p className="text-sm text-gray-600">
+                    Showing {Math.min((currentPage - 1) * itemsPerPage + 1, submissions.length)} - {Math.min(currentPage * itemsPerPage, submissions.length)} of {submissions.length}
+                  </p>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                      disabled={currentPage === 1}
+                      data-testid="button-prev-page"
+                    >
+                      <i className="fas fa-chevron-left"></i>
+                    </Button>
+                    <span className="text-sm px-3 py-1 bg-white border rounded">{currentPage}</span>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setCurrentPage(prev => prev + 1)}
+                      disabled={currentPage * itemsPerPage >= submissions.length}
+                      data-testid="button-next-page"
+                    >
+                      <i className="fas fa-chevron-right"></i>
+                    </Button>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
       </main>
       
       {/* Mobile Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 md:hidden bg-card border-t border-border z-50">
+      <nav className="fixed bottom-0 left-0 right-0 md:hidden bg-white border-t border-border z-50 shadow-lg">
         <div className="grid grid-cols-3 py-2">
-          <button className="flex flex-col items-center py-2 text-primary" data-testid="nav-home">
+          <button 
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            className="flex flex-col items-center py-2 text-primary" 
+            data-testid="nav-home"
+          >
             <i className="fas fa-home text-lg mb-1"></i>
             <span className="text-xs">Home</span>
           </button>
-          <button className="flex flex-col items-center py-2 text-muted-foreground" data-testid="nav-history">
+          <button 
+            onClick={() => document.querySelector('[data-testid="card-recent-submissions"]')?.scrollIntoView({ behavior: 'smooth' })}
+            className="flex flex-col items-center py-2 text-muted-foreground" 
+            data-testid="nav-history"
+          >
             <i className="fas fa-history text-lg mb-1"></i>
             <span className="text-xs">History</span>
           </button>
-          <button className="flex flex-col items-center py-2 text-muted-foreground" data-testid="nav-profile">
-            <i className="fas fa-user text-lg mb-1"></i>
-            <span className="text-xs">Profile</span>
-          </button>
+          {userRole === 'manager' ? (
+            <Link href="/manager">
+              <button className="flex flex-col items-center py-2 text-muted-foreground w-full" data-testid="nav-manager">
+                <i className="fas fa-cogs text-lg mb-1"></i>
+                <span className="text-xs">Manager</span>
+              </button>
+            </Link>
+          ) : (
+            <button 
+              onClick={handleLogout}
+              className="flex flex-col items-center py-2 text-muted-foreground" 
+              data-testid="nav-logout"
+            >
+              <i className="fas fa-sign-out-alt text-lg mb-1"></i>
+              <span className="text-xs">Logout</span>
+            </button>
+          )}
         </div>
       </nav>
     </div>

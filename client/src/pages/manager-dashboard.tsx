@@ -12,8 +12,10 @@ export default function ManagerDashboard() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
-  const [governmentFilter, setGovernmentFilter] = useState("");
-  const [typeFilter, setTypeFilter] = useState("");
+  const [governmentFilter, setGovernmentFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [dateFilter, setDateFilter] = useState("all");
+  const [activeView, setActiveView] = useState("dashboard");
   const [submissions] = useState([]);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [stats] = useState({
@@ -23,6 +25,39 @@ export default function ManagerDashboard() {
     todayCount: 0,
     activeAgents: 0
   });
+
+  const exportData = (format: 'csv' | 'excel' | 'txt') => {
+    const data = filteredSubmissions;
+    let content = '';
+    let filename = '';
+    
+    if (format === 'csv' || format === 'excel') {
+      const headers = 'Client Name,Government,ATM Code,Service Type,Agent,Timestamp\n';
+      const rows = data.map((sub: any) => 
+        `"${sub.clientName}","${sub.government}","${sub.atmCode}","${sub.serviceType}","${sub.agentName || 'Unknown'}","${sub.createdAt ? new Date(sub.createdAt).toLocaleString() : 'N/A'}"`
+      ).join('\n');
+      content = headers + rows;
+      filename = `submissions_${new Date().toISOString().split('T')[0]}.csv`;
+    } else {
+      content = data.map((sub: any, index: number) => 
+        `${index + 1}. ${sub.clientName} - ${sub.government} - ${sub.atmCode} - ${sub.serviceType} - ${sub.agentName || 'Unknown'} - ${sub.createdAt ? new Date(sub.createdAt).toLocaleString() : 'N/A'}`
+      ).join('\n\n');
+      filename = `submissions_${new Date().toISOString().split('T')[0]}.txt`;
+    }
+    
+    const blob = new Blob([content], { type: format === 'txt' ? 'text/plain' : 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    window.URL.revokeObjectURL(url);
+    
+    toast({
+      title: "Export Complete",
+      description: `Downloaded ${filename}`,
+    });
+  };
 
   useEffect(() => {
     const role = localStorage.getItem('userRole');
@@ -48,10 +83,24 @@ export default function ManagerDashboard() {
   const filteredSubmissions = Array.isArray(submissions) ? submissions.filter((submission: any) => {
     const matchesSearch = submission.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          submission.atmCode.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesGovernment = governmentFilter === 'all' || !governmentFilter || submission.government === governmentFilter;
-    const matchesType = typeFilter === 'all' || !typeFilter || submission.serviceType === typeFilter;
+    const matchesGovernment = governmentFilter === 'all' || submission.government === governmentFilter;
+    const matchesType = typeFilter === 'all' || submission.serviceType === typeFilter;
     
-    return matchesSearch && matchesGovernment && matchesType;
+    const submissionDate = submission.createdAt ? new Date(submission.createdAt) : null;
+    const today = new Date();
+    let matchesDate = true;
+    
+    if (dateFilter === 'today' && submissionDate) {
+      matchesDate = submissionDate.toDateString() === today.toDateString();
+    } else if (dateFilter === 'week' && submissionDate) {
+      const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+      matchesDate = submissionDate >= weekAgo;
+    } else if (dateFilter === 'month' && submissionDate) {
+      const monthAgo = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
+      matchesDate = submissionDate >= monthAgo;
+    }
+    
+    return matchesSearch && matchesGovernment && matchesType && matchesDate;
   }) : [];
 
 
@@ -73,28 +122,52 @@ export default function ManagerDashboard() {
           <nav className="flex-1 px-4 py-4">
             <ul className="space-y-2">
               <li>
-                <a href="#" className="flex items-center px-3 py-2 rounded-md text-sm font-medium bg-primary/10 text-primary" data-testid="nav-dashboard">
+                <button 
+                  onClick={() => setActiveView("dashboard")}
+                  className={`w-full flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    activeView === 'dashboard' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                  }`} 
+                  data-testid="nav-dashboard"
+                >
                   <i className="fas fa-chart-line mr-3"></i>
                   Dashboard
-                </a>
+                </button>
               </li>
               <li>
-                <a href="#" className="flex items-center px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground" data-testid="nav-submissions">
+                <button 
+                  onClick={() => setActiveView("submissions")}
+                  className={`w-full flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    activeView === 'submissions' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                  }`} 
+                  data-testid="nav-submissions"
+                >
                   <i className="fas fa-database mr-3"></i>
                   All Submissions
-                </a>
+                </button>
               </li>
               <li>
-                <a href="#" className="flex items-center px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground" data-testid="nav-agents">
+                <button 
+                  onClick={() => setActiveView("agents")}
+                  className={`w-full flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    activeView === 'agents' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                  }`} 
+                  data-testid="nav-agents"
+                >
                   <i className="fas fa-users mr-3"></i>
                   Agents
-                </a>
+                </button>
               </li>
               <li>
-                <a href="#" className="flex items-center px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground" data-testid="nav-reports">
+                <button 
+                  onClick={() => setActiveView("reports")}
+                  className={`w-full flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    activeView === 'reports' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                  }`} 
+                  data-testid="nav-reports"
+                >
                   <i className="fas fa-file-export mr-3"></i>
                   Reports
-                </a>
+                </button>
               </li>
             </ul>
           </nav>
@@ -144,6 +217,8 @@ export default function ManagerDashboard() {
         </header>
 
         <main className="p-6">
+          {activeView === 'dashboard' && (
+            <>
           {/* Stats Overview */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <Card className="bg-gradient-to-br from-card to-muted">
@@ -250,15 +325,46 @@ export default function ManagerDashboard() {
                       <SelectItem value="maintenance">صيانة (Maintenance)</SelectItem>
                     </SelectContent>
                   </Select>
+                  <Select value={dateFilter} onValueChange={setDateFilter}>
+                    <SelectTrigger className="w-full sm:w-auto" data-testid="select-date-filter">
+                      <SelectValue placeholder="All Time" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Time</SelectItem>
+                      <SelectItem value="today">Today</SelectItem>
+                      <SelectItem value="week">This Week</SelectItem>
+                      <SelectItem value="month">This Month</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="secondary" data-testid="button-filter">
-                    <i className="fas fa-filter mr-2"></i>
-                    Filter
+                  <Button 
+                    variant="secondary" 
+                    onClick={() => {
+                      setSearchTerm('');
+                      setGovernmentFilter('all');
+                      setTypeFilter('all');
+                      setDateFilter('all');
+                    }}
+                    data-testid="button-clear-filters"
+                  >
+                    <i className="fas fa-times mr-2"></i>
+                    Clear
                   </Button>
-                  <Button data-testid="button-export">
+                  <Button 
+                    onClick={() => exportData('csv')}
+                    data-testid="button-export-csv"
+                  >
                     <i className="fas fa-download mr-2"></i>
-                    Export
+                    CSV
+                  </Button>
+                  <Button 
+                    variant="secondary"
+                    onClick={() => exportData('txt')}
+                    data-testid="button-export-txt"
+                  >
+                    <i className="fas fa-file-text mr-2"></i>
+                    TXT
                   </Button>
                 </div>
               </div>
@@ -390,6 +496,41 @@ export default function ManagerDashboard() {
               </div>
             </div>
           </Card>
+            </>
+          )}
+          
+          {activeView === 'submissions' && (
+            <div>
+              <h2 className="text-2xl font-bold mb-6">All Submissions</h2>
+              <Card>
+                <CardContent className="p-6">
+                  <p className="text-center text-muted-foreground">Detailed submissions view - connect with Supabase to load data</p>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+          
+          {activeView === 'agents' && (
+            <div>
+              <h2 className="text-2xl font-bold mb-6">Field Agents</h2>
+              <Card>
+                <CardContent className="p-6">
+                  <p className="text-center text-muted-foreground">Agent management view - connect with Supabase to load data</p>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+          
+          {activeView === 'reports' && (
+            <div>
+              <h2 className="text-2xl font-bold mb-6">Reports & Analytics</h2>
+              <Card>
+                <CardContent className="p-6">
+                  <p className="text-center text-muted-foreground">Advanced reporting view - connect with Supabase to load data</p>
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </main>
       </div>
 
