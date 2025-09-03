@@ -1,35 +1,31 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Link } from "wouter";
 import type { Submission } from "@shared/schema";
 
 export default function ManagerDashboard() {
-  const { user, isLoading } = useAuth();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [governmentFilter, setGovernmentFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
-
-  // Fetch all submissions
-  const { data: submissions = [], isLoading: submissionsLoading } = useQuery({
-    queryKey: ["/api/submissions"],
-    enabled: !isLoading && !!user && user.role === 'manager',
+  const [submissions] = useState([]);
+  const [stats] = useState({
+    total: 0,
+    feeding: 0,
+    maintenance: 0,
+    todayCount: 0,
+    activeAgents: 0
   });
 
-  // Fetch stats
-  const { data: stats } = useQuery({
-    queryKey: ["/api/submissions/stats"],
-    enabled: !isLoading && !!user && user.role === 'manager',
-  });
+  // This will be connected to Supabase later
 
-  const handleLogout = () => {
-    window.location.href = '/api/logout';
+  const handleHome = () => {
+    window.location.href = '/';
   };
 
   const filteredSubmissions = Array.isArray(submissions) ? submissions.filter((submission: any) => {
@@ -41,33 +37,6 @@ export default function ManagerDashboard() {
     return matchesSearch && matchesGovernment && matchesType;
   }) : [];
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (user?.role !== 'manager') {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Card className="w-full max-w-md mx-4">
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <h1 className="text-xl font-bold text-gray-900 mb-4">Access Denied</h1>
-              <p className="text-sm text-gray-600">
-                You don't have permission to access this page.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -120,7 +89,7 @@ export default function ManagerDashboard() {
               </div>
               <div className="ml-3">
                 <p className="font-medium text-card-foreground" data-testid="text-manager-name">
-                  {user?.firstName || 'Manager'}
+                  Manager
                 </p>
                 <p className="text-xs text-muted-foreground">Operations Manager</p>
               </div>
@@ -142,9 +111,11 @@ export default function ManagerDashboard() {
                 <div className="w-2 h-2 bg-accent rounded-full animate-pulse absolute -top-1 -right-1"></div>
                 <i className="fas fa-bell text-muted-foreground"></i>
               </div>
-              <Button variant="ghost" size="sm" onClick={handleLogout} data-testid="button-logout">
-                <i className="fas fa-sign-out-alt"></i>
-              </Button>
+              <Link href="/">
+                <Button variant="ghost" size="sm" data-testid="button-home">
+                  <i className="fas fa-home"></i>
+                </Button>
+              </Link>
             </div>
           </div>
         </header>
@@ -161,7 +132,7 @@ export default function ManagerDashboard() {
                   <div className="ml-4">
                     <p className="text-sm font-medium text-muted-foreground">Total Submissions</p>
                     <p className="text-2xl font-bold text-card-foreground" data-testid="stat-total-submissions">
-                      {stats?.total || 0}
+                      {stats.total}
                     </p>
                   </div>
                 </div>
@@ -177,7 +148,7 @@ export default function ManagerDashboard() {
                   <div className="ml-4">
                     <p className="text-sm font-medium text-muted-foreground">Active Agents</p>
                     <p className="text-2xl font-bold text-card-foreground" data-testid="stat-active-agents">
-                      {stats?.activeAgents || 0}
+                      {stats.activeAgents}
                     </p>
                   </div>
                 </div>
@@ -193,7 +164,7 @@ export default function ManagerDashboard() {
                   <div className="ml-4">
                     <p className="text-sm font-medium text-muted-foreground" dir="rtl">تغذية</p>
                     <p className="text-2xl font-bold text-card-foreground" data-testid="stat-feeding-services">
-                      {stats?.feeding || 0}
+                      {stats.feeding}
                     </p>
                   </div>
                 </div>
@@ -209,7 +180,7 @@ export default function ManagerDashboard() {
                   <div className="ml-4">
                     <p className="text-sm font-medium text-muted-foreground" dir="rtl">صيانة</p>
                     <p className="text-2xl font-bold text-card-foreground" data-testid="stat-maintenance-services">
-                      {stats?.maintenance || 0}
+                      {stats.maintenance}
                     </p>
                   </div>
                 </div>
@@ -297,14 +268,7 @@ export default function ManagerDashboard() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {submissionsLoading ? (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8">
-                        <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto mb-2"></div>
-                        Loading submissions...
-                      </TableCell>
-                    </TableRow>
-                  ) : filteredSubmissions.length > 0 ? (
+                  {filteredSubmissions.length > 0 ? (
                     filteredSubmissions.map((submission: any) => (
                       <TableRow key={submission.id} className="hover:bg-accent/50" data-testid={`row-submission-${submission.id}`}>
                         <TableCell className="font-medium" data-testid={`cell-client-${submission.id}`}>
@@ -351,12 +315,7 @@ export default function ManagerDashboard() {
             {/* Mobile Card View */}
             <div className="md:hidden">
               <div className="divide-y divide-border">
-                {submissionsLoading ? (
-                  <div className="p-4 text-center">
-                    <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto mb-2"></div>
-                    Loading submissions...
-                  </div>
-                ) : filteredSubmissions.length > 0 ? (
+                {filteredSubmissions.length > 0 ? (
                   filteredSubmissions.map((submission: any) => (
                     <div key={submission.id} className="p-4 hover:bg-accent/50 transition-colors" data-testid={`card-mobile-${submission.id}`}>
                       <div className="flex items-start justify-between mb-3">

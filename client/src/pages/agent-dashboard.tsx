@@ -1,12 +1,9 @@
 import { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { isUnauthorizedError } from "@/lib/authUtils";
-import { apiRequest } from "@/lib/queryClient";
-import { insertSubmissionSchema, type InsertSubmission, type Submission } from "@shared/schema";
+import { insertSubmissionSchema, type InsertSubmission } from "@shared/schema";
+import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,11 +12,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
+type DemoSubmission = {
+  id: string;
+  clientName: string;
+  government: string;
+  atmCode: string;
+  serviceType: "feeding" | "maintenance";
+  agentId: string;
+  createdAt: Date;
+};
+
 export default function AgentDashboard() {
-  const { user, isLoading } = useAuth();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [submissions, setSubmissions] = useState<DemoSubmission[]>([]);
 
   // Update timestamp every second
   useEffect(() => {
@@ -39,70 +45,30 @@ export default function AgentDashboard() {
     },
   });
 
-  // Fetch agent's submissions
-  const { data: submissions = [], isLoading: submissionsLoading } = useQuery({
-    queryKey: ["/api/submissions"],
-    enabled: !isLoading && !!user,
-  });
-
-  // Fetch stats
-  const { data: stats } = useQuery({
-    queryKey: ["/api/submissions/stats"],
-    enabled: !isLoading && !!user,
-  });
-
-  const submitMutation = useMutation({
-    mutationFn: async (data: InsertSubmission) => {
-      const res = await apiRequest("POST", "/api/submissions", data);
-      return await res.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Visit record submitted successfully",
-      });
-      form.reset();
-      queryClient.invalidateQueries({ queryKey: ["/api/submissions"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/submissions/stats"] });
-    },
-    onError: (error) => {
-      if (isUnauthorizedError(error)) {
-        toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
-        return;
-      }
-      toast({
-        title: "Error",
-        description: "Failed to submit visit record",
-        variant: "destructive",
-      });
-    },
-  });
+  // This will be connected to Supabase later
+  const handleSubmit = (data: InsertSubmission) => {
+    const newSubmission = {
+      id: Date.now().toString(),
+      ...data,
+      agentId: 'demo-agent',
+      createdAt: new Date(),
+    };
+    setSubmissions(prev => [newSubmission, ...prev]);
+    toast({
+      title: "Success",
+      description: "Visit record submitted successfully (demo mode)",
+    });
+    form.reset();
+  };
 
   const onSubmit = (data: InsertSubmission) => {
-    submitMutation.mutate(data);
+    handleSubmit(data);
   };
 
-  const handleLogout = () => {
-    window.location.href = '/api/logout';
+  const handleHome = () => {
+    window.location.href = '/';
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -115,13 +81,13 @@ export default function AgentDashboard() {
             </div>
             <div>
               <h1 className="font-semibold text-card-foreground" data-testid="text-agent-name">
-                {user?.firstName || 'Field Agent'}
+                Field Agent
               </h1>
               <p className="text-xs text-muted-foreground">Field Agent</p>
             </div>
           </div>
-          <Button variant="ghost" size="sm" onClick={handleLogout} data-testid="button-logout">
-            <i className="fas fa-sign-out-alt"></i>
+          <Button variant="ghost" size="sm" onClick={handleHome} data-testid="button-home">
+            <i className="fas fa-home"></i>
           </Button>
         </div>
       </header>
@@ -137,7 +103,11 @@ export default function AgentDashboard() {
                   <div>
                     <p className="text-xs text-muted-foreground font-medium">Today's Visits</p>
                     <p className="text-2xl font-bold text-card-foreground" data-testid="text-today-visits">
-                      {stats?.todayCount || 0}
+                      {submissions.filter(s => {
+                        const today = new Date();
+                        const submissionDate = new Date(s.createdAt);
+                        return submissionDate.toDateString() === today.toDateString();
+                      }).length}
                     </p>
                   </div>
                   <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
@@ -153,7 +123,7 @@ export default function AgentDashboard() {
                   <div>
                     <p className="text-xs text-muted-foreground font-medium">Total Visits</p>
                     <p className="text-2xl font-bold text-card-foreground" data-testid="text-total-visits">
-                      {Array.isArray(submissions) ? submissions.length : 0}
+                      {submissions.length}
                     </p>
                   </div>
                   <div className="w-10 h-10 bg-accent/10 rounded-full flex items-center justify-center">
@@ -292,11 +262,10 @@ export default function AgentDashboard() {
                     <Button 
                       type="submit" 
                       className="flex-1"
-                      disabled={submitMutation.isPending}
                       data-testid="button-submit-visit"
                     >
                       <i className="fas fa-check mr-2"></i>
-                      {submitMutation.isPending ? "Submitting..." : "Submit Visit"}
+                      Submit Visit
                     </Button>
                   </div>
                 </form>
@@ -311,12 +280,8 @@ export default function AgentDashboard() {
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y divide-border">
-                {submissionsLoading ? (
-                  <div className="p-4 text-center text-muted-foreground">
-                    Loading submissions...
-                  </div>
-                ) : Array.isArray(submissions) && submissions.length > 0 ? (
-                  submissions.slice(0, 5).map((submission: Submission) => (
+                {submissions.length > 0 ? (
+                  submissions.slice(0, 5).map((submission: DemoSubmission) => (
                     <div key={submission.id} className="p-4 hover:bg-accent/50 transition-colors" data-testid={`card-submission-${submission.id}`}>
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
