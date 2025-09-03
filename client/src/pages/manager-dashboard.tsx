@@ -48,8 +48,8 @@ export default function ManagerDashboard() {
   const filteredSubmissions = Array.isArray(submissions) ? submissions.filter((submission: any) => {
     const matchesSearch = submission.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          submission.atmCode.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesGovernment = !governmentFilter || submission.government === governmentFilter;
-    const matchesType = !typeFilter || submission.serviceType === typeFilter;
+    const matchesGovernment = governmentFilter === 'all' || !governmentFilter || submission.government === governmentFilter;
+    const matchesType = typeFilter === 'all' || !typeFilter || submission.serviceType === typeFilter;
     
     return matchesSearch && matchesGovernment && matchesType;
   }) : [];
@@ -231,7 +231,7 @@ export default function ManagerDashboard() {
                       <SelectValue placeholder="All Governorates" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Governorates</SelectItem>
+                      <SelectItem value="all">All Governorates</SelectItem>
                       <SelectItem value="cairo">Cairo</SelectItem>
                       <SelectItem value="giza">Giza</SelectItem>
                       <SelectItem value="alexandria">Alexandria</SelectItem>
@@ -245,7 +245,7 @@ export default function ManagerDashboard() {
                       <SelectValue placeholder="All Types" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Types</SelectItem>
+                      <SelectItem value="all">All Types</SelectItem>
                       <SelectItem value="feeding">تغذية (Feeding)</SelectItem>
                       <SelectItem value="maintenance">صيانة (Maintenance)</SelectItem>
                     </SelectContent>

@@ -78,30 +78,30 @@ export default function AgentDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Mobile Header */}
-      <header className="bg-card border-b border-border sticky top-0 z-40">
+      {/* Header */}
+      <header className="bg-gradient-to-r from-primary to-blue-600 shadow-lg sticky top-0 z-40">
         <div className="px-4 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-              <i className="fas fa-user text-primary-foreground text-sm"></i>
+            <div className="w-10 h-10 bg-white/20 backdrop-blur rounded-full flex items-center justify-center shadow-md">
+              <i className="fas fa-user text-white text-lg"></i>
             </div>
             <div>
-              <h1 className="font-semibold text-card-foreground" data-testid="text-agent-name">
-                Field Agent
+              <h1 className="font-bold text-white text-lg" data-testid="text-agent-name">
+                Field Agent Dashboard
               </h1>
-              <p className="text-xs text-muted-foreground">Field Agent</p>
+              <p className="text-xs text-blue-100">Submit service reports</p>
             </div>
           </div>
           <div className="flex items-center space-x-2">
             {userRole === 'manager' && (
               <Link href="/manager">
-                <Button variant="outline" size="sm" data-testid="button-manager-panel">
+                <Button variant="secondary" size="sm" className="bg-white/20 backdrop-blur hover:bg-white/30 text-white border-white/30" data-testid="button-manager-panel">
                   <i className="fas fa-cogs mr-1"></i>
                   Manager
                 </Button>
               </Link>
             )}
-            <Button variant="ghost" size="sm" onClick={handleLogout} data-testid="button-logout">
+            <Button variant="ghost" size="sm" onClick={handleLogout} className="text-white hover:bg-white/20" data-testid="button-logout">
               <i className="fas fa-sign-out-alt"></i>
             </Button>
           </div>
@@ -113,12 +113,12 @@ export default function AgentDashboard() {
         {/* Stats Overview */}
         <div className="p-4">
           <div className="grid grid-cols-2 gap-4 mb-6">
-            <Card className="bg-gradient-to-br from-card to-muted">
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 shadow-lg">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-muted-foreground font-medium">Today's Visits</p>
-                    <p className="text-2xl font-bold text-card-foreground" data-testid="text-today-visits">
+                    <p className="text-xs text-blue-600 font-semibold">Today's Visits</p>
+                    <p className="text-3xl font-bold text-blue-800" data-testid="text-today-visits">
                       {submissions.filter(s => {
                         const today = new Date();
                         const submissionDate = new Date(s.createdAt);
@@ -126,24 +126,24 @@ export default function AgentDashboard() {
                       }).length}
                     </p>
                   </div>
-                  <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                    <i className="fas fa-clipboard-check text-primary"></i>
+                  <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center shadow-md">
+                    <i className="fas fa-clipboard-check text-white text-lg"></i>
                   </div>
                 </div>
               </CardContent>
             </Card>
             
-            <Card className="bg-gradient-to-br from-card to-muted">
+            <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200 shadow-lg">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-muted-foreground font-medium">Total Visits</p>
-                    <p className="text-2xl font-bold text-card-foreground" data-testid="text-total-visits">
+                    <p className="text-xs text-green-600 font-semibold">Total Visits</p>
+                    <p className="text-3xl font-bold text-green-800" data-testid="text-total-visits">
                       {submissions.length}
                     </p>
                   </div>
-                  <div className="w-10 h-10 bg-accent/10 rounded-full flex items-center justify-center">
-                    <i className="fas fa-calendar-week text-accent"></i>
+                  <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center shadow-md">
+                    <i className="fas fa-calendar-week text-white text-lg"></i>
                   </div>
                 </div>
               </CardContent>
@@ -153,13 +153,13 @@ export default function AgentDashboard() {
 
         {/* Data Submission Form */}
         <div className="px-4">
-          <Card className="shadow-sm">
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center text-lg">
-                <i className="fas fa-plus-circle text-primary mr-2"></i>
+          <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-gray-50">
+            <CardHeader className="pb-4 bg-gradient-to-r from-primary/10 to-primary/5 rounded-t-lg">
+              <CardTitle className="flex items-center text-xl text-primary">
+                <i className="fas fa-plus-circle mr-3 text-2xl"></i>
                 New Visit Record
               </CardTitle>
-              <p className="text-sm text-muted-foreground">Submit client visit information</p>
+              <p className="text-sm text-primary/70 font-medium">Submit client visit information</p>
             </CardHeader>
             
             <CardContent>
@@ -229,24 +229,24 @@ export default function AgentDashboard() {
                           <RadioGroup
                             onValueChange={field.onChange}
                             defaultValue={field.value}
-                            className="grid grid-cols-2 gap-3"
+                            className="grid grid-cols-2 gap-4"
                           >
-                            <div className="flex items-center justify-center p-3 border border-input rounded-md has-[:checked]:border-primary has-[:checked]:bg-primary/5">
-                              <RadioGroupItem value="feeding" id="feeding" className="sr-only" />
-                              <Label htmlFor="feeding" className="text-center cursor-pointer" data-testid="radio-feeding">
-                                <i className="fas fa-plug text-primary text-lg mb-1 block"></i>
-                                <div className="text-sm font-medium" dir="rtl">تغذية</div>
-                                <div className="text-xs text-muted-foreground">Feeding</div>
-                              </Label>
-                            </div>
-                            <div className="flex items-center justify-center p-3 border border-input rounded-md has-[:checked]:border-primary has-[:checked]:bg-primary/5">
-                              <RadioGroupItem value="maintenance" id="maintenance" className="sr-only" />
-                              <Label htmlFor="maintenance" className="text-center cursor-pointer" data-testid="radio-maintenance">
-                                <i className="fas fa-wrench text-accent text-lg mb-1 block"></i>
-                                <div className="text-sm font-medium" dir="rtl">صيانة</div>
-                                <div className="text-xs text-muted-foreground">Maintenance</div>
-                              </Label>
-                            </div>
+                            <label className="relative block cursor-pointer" data-testid="radio-feeding">
+                              <RadioGroupItem value="feeding" id="feeding" className="sr-only peer" />
+                              <div className="peer-checked:border-primary peer-checked:bg-primary/10 peer-checked:shadow-md border-2 border-input rounded-lg p-4 transition-all duration-200 hover:bg-accent/50 hover:border-accent flex flex-col items-center justify-center min-h-[100px] bg-card">
+                                <i className="fas fa-plug text-primary text-2xl mb-2"></i>
+                                <div className="text-sm font-semibold" dir="rtl">تغذية</div>
+                                <div className="text-xs text-muted-foreground mt-1">Feeding</div>
+                              </div>
+                            </label>
+                            <label className="relative block cursor-pointer" data-testid="radio-maintenance">
+                              <RadioGroupItem value="maintenance" id="maintenance" className="sr-only peer" />
+                              <div className="peer-checked:border-amber-500 peer-checked:bg-amber-50 peer-checked:shadow-md border-2 border-input rounded-lg p-4 transition-all duration-200 hover:bg-accent/50 hover:border-accent flex flex-col items-center justify-center min-h-[100px] bg-card">
+                                <i className="fas fa-wrench text-amber-600 text-2xl mb-2"></i>
+                                <div className="text-sm font-semibold" dir="rtl">صيانة</div>
+                                <div className="text-xs text-muted-foreground mt-1">Maintenance</div>
+                              </div>
+                            </label>
                           </RadioGroup>
                         </FormControl>
                         <FormMessage />
@@ -254,33 +254,36 @@ export default function AgentDashboard() {
                     )}
                   />
                   
-                  <div className="bg-muted rounded-md p-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-muted-foreground">Timestamp</span>
-                      <span className="text-sm text-foreground" data-testid="text-timestamp">
+                  <div className="bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 rounded-lg p-4 shadow-sm">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-semibold text-gray-700 flex items-center">
+                        <i className="fas fa-clock mr-2 text-blue-500"></i>
+                        Timestamp
+                      </span>
+                      <span className="text-sm font-mono text-gray-800 bg-white px-2 py-1 rounded border" data-testid="text-timestamp">
                         {currentTime.toLocaleString()}
                       </span>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">Automatically captured on submission</p>
+                    <p className="text-xs text-gray-500">Automatically captured on submission</p>
                   </div>
                   
-                  <div className="flex gap-3">
+                  <div className="flex gap-4">
                     <Button 
                       type="button" 
-                      variant="secondary" 
-                      className="flex-1"
+                      variant="outline" 
+                      className="flex-1 py-3 border-2 hover:bg-gray-50"
                       onClick={() => form.reset()}
                       data-testid="button-cancel"
                     >
                       <i className="fas fa-times mr-2"></i>
-                      Cancel
+                      Clear Form
                     </Button>
                     <Button 
                       type="submit" 
-                      className="flex-1"
+                      className="flex-1 py-3 bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90 shadow-lg"
                       data-testid="button-submit-visit"
                     >
-                      <i className="fas fa-check mr-2"></i>
+                      <i className="fas fa-paper-plane mr-2"></i>
                       Submit Visit
                     </Button>
                   </div>
@@ -290,9 +293,12 @@ export default function AgentDashboard() {
           </Card>
           
           {/* Recent Submissions */}
-          <Card className="mt-6">
-            <CardHeader>
-              <CardTitle className="text-base">Recent Submissions</CardTitle>
+          <Card className="mt-6 shadow-lg border-0">
+            <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-t-lg">
+              <CardTitle className="text-lg font-bold text-gray-800 flex items-center">
+                <i className="fas fa-history mr-2 text-blue-500"></i>
+                Recent Submissions
+              </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y divide-border">
