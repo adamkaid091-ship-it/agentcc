@@ -26,6 +26,11 @@ export default function AgentDashboard() {
   const { toast } = useToast();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [submissions, setSubmissions] = useState<DemoSubmission[]>([]);
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    setUserRole(localStorage.getItem('userRole'));
+  }, []);
 
   // Update timestamp every second
   useEffect(() => {
@@ -65,7 +70,8 @@ export default function AgentDashboard() {
     handleSubmit(data);
   };
 
-  const handleHome = () => {
+  const handleLogout = () => {
+    localStorage.removeItem('userRole');
     window.location.href = '/';
   };
 
@@ -86,9 +92,19 @@ export default function AgentDashboard() {
               <p className="text-xs text-muted-foreground">Field Agent</p>
             </div>
           </div>
-          <Button variant="ghost" size="sm" onClick={handleHome} data-testid="button-home">
-            <i className="fas fa-home"></i>
-          </Button>
+          <div className="flex items-center space-x-2">
+            {userRole === 'manager' && (
+              <Link href="/manager">
+                <Button variant="outline" size="sm" data-testid="button-manager-panel">
+                  <i className="fas fa-cogs mr-1"></i>
+                  Manager
+                </Button>
+              </Link>
+            )}
+            <Button variant="ghost" size="sm" onClick={handleLogout} data-testid="button-logout">
+              <i className="fas fa-sign-out-alt"></i>
+            </Button>
+          </div>
         </div>
       </header>
 

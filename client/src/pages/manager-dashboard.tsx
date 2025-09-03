@@ -1,19 +1,21 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import type { Submission } from "@shared/schema";
 
 export default function ManagerDashboard() {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   const [governmentFilter, setGovernmentFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [submissions] = useState([]);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [stats] = useState({
     total: 0,
     feeding: 0,
@@ -22,9 +24,24 @@ export default function ManagerDashboard() {
     activeAgents: 0
   });
 
+  useEffect(() => {
+    const role = localStorage.getItem('userRole');
+    setUserRole(role);
+    // Only managers should access this dashboard
+    if (role !== 'manager') {
+      toast({
+        title: "Access Denied",
+        description: "You need manager permissions to access this page",
+        variant: "destructive",
+      });
+      setLocation('/agent');
+    }
+  }, [toast, setLocation]);
+
   // This will be connected to Supabase later
 
-  const handleHome = () => {
+  const handleLogout = () => {
+    localStorage.removeItem('userRole');
     window.location.href = '/';
   };
 
@@ -111,11 +128,17 @@ export default function ManagerDashboard() {
                 <div className="w-2 h-2 bg-accent rounded-full animate-pulse absolute -top-1 -right-1"></div>
                 <i className="fas fa-bell text-muted-foreground"></i>
               </div>
-              <Link href="/">
-                <Button variant="ghost" size="sm" data-testid="button-home">
-                  <i className="fas fa-home"></i>
+              <div className="flex items-center space-x-2">
+                <Link href="/agent">
+                  <Button variant="outline" size="sm" data-testid="button-agent-view">
+                    <i className="fas fa-user mr-1"></i>
+                    Agent View
+                  </Button>
+                </Link>
+                <Button variant="ghost" size="sm" onClick={handleLogout} data-testid="button-logout">
+                  <i className="fas fa-sign-out-alt"></i>
                 </Button>
-              </Link>
+              </div>
             </div>
           </div>
         </header>
