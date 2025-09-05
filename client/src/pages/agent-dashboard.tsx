@@ -61,14 +61,48 @@ export default function AgentDashboard() {
       if (!response.ok) throw new Error('Failed to fetch submissions');
       return response.json();
     },
+    staleTime: 0, // Always fetch fresh data
+    refetchOnWindowFocus: true,
   });
 
   // Create submission mutation
   const createSubmissionMutation = useMutation({
     mutationFn: async (data: InsertSubmission) => {
-      const token = await getAccessToken();
-      const response = await apiRequest('POST', '/api/submissions', data, token);
-      return response.json();
+      console.log('Submitting data:', data);
+      
+      // First sync user with backend to ensure they exist in database
+      try {
+        const token = await getAccessToken();
+        console.log('Got token:', token ? 'Token available' : 'No token');
+        
+        if (!token) {
+          throw new Error('No access token available. Please try logging out and back in.');
+        }
+        
+        // Sync user with backend database first
+        console.log('Syncing user with backend...');
+        const userSyncResponse = await fetch('/api/user/profile', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+        
+        if (!userSyncResponse.ok) {
+          console.error('User sync failed:', userSyncResponse.status, await userSyncResponse.text());
+          throw new Error('Failed to sync user with backend. Please try refreshing the page.');
+        }
+        
+        const userProfile = await userSyncResponse.json();
+        console.log('User synced successfully:', userProfile);
+        
+        // Now submit the data
+        const response = await apiRequest('POST', '/api/submissions', data, token);
+        console.log('Submission response:', response.status);
+        return response.json();
+      } catch (error) {
+        console.error('Full submission error:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/submissions/my'] });

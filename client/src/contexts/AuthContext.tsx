@@ -32,60 +32,70 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const fetchUserProfile = async (supabaseUser: SupabaseUser, isInitialLoad: boolean = false) => {
-    console.log('Creating user profile from Supabase data, isInitialLoad:', isInitialLoad);
-    
-    // Determine role based on email or metadata
-    const email = supabaseUser.email || '';
-    const isManager = email.includes('admin') || 
-                     email.includes('manager') || 
-                     supabaseUser.user_metadata?.role === 'manager' ||
-                     email.endsWith('@company.com'); // Admin emails typically get manager role
-    
-    // Create user data from Supabase directly (for UI display)
-    const userData = {
-      id: supabaseUser.id,
-      email: email,
-      firstName: supabaseUser.user_metadata?.first_name || supabaseUser.user_metadata?.name?.split(' ')[0] || '',
-      lastName: supabaseUser.user_metadata?.last_name || supabaseUser.user_metadata?.name?.split(' ').slice(1).join(' ') || '',
-      role: isManager ? 'manager' as const : 'agent' as const
-    };
-    
-    console.log('Role detection - email:', email, 'isManager:', isManager, 'final role:', userData.role);
-    console.log('Setting user data:', userData);
-    setUser(userData);
-    
-    // Try to sync user with backend database (for database operations)
     try {
-      const token = await getAccessToken();
-      if (token) {
-        console.log('Syncing user with backend database...');
-        await fetch('/api/user/profile', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-        console.log('User synced with backend successfully');
-      }
+      console.log('Creating user profile from Supabase data, isInitialLoad:', isInitialLoad);
+      
+      // Determine role based on email or metadata
+      const email = supabaseUser.email || '';
+      const isManager = email.includes('admin') || 
+                       email.includes('manager') || 
+                       supabaseUser.user_metadata?.role === 'manager' ||
+                       email.endsWith('@company.com'); // Admin emails typically get manager role
+      
+      // Create user data from Supabase directly (for UI display)
+      const userData = {
+        id: supabaseUser.id,
+        email: email,
+        firstName: supabaseUser.user_metadata?.first_name || supabaseUser.user_metadata?.name?.split(' ')[0] || '',
+        lastName: supabaseUser.user_metadata?.last_name || supabaseUser.user_metadata?.name?.split(' ').slice(1).join(' ') || '',
+        role: isManager ? 'manager' as const : 'agent' as const
+      };
+      
+      console.log('Role detection - email:', email, 'isManager:', isManager, 'final role:', userData.role);
+      console.log('Setting user data:', userData);
+      setUser(userData);
+      
+      // Always set loading to false immediately after setting user
+      setLoading(false);
+      console.log('Loading set to false, user should see dashboard now');
+      
+      // Try to sync user with backend database (for database operations) - but don't block UI
+      setTimeout(async () => {
+        try {
+          const token = await getAccessToken();
+          if (token) {
+            console.log('Background: Syncing user with backend database...');
+            await fetch('/api/user/profile', {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+              },
+            });
+            console.log('Background: User synced with backend successfully');
+          }
+        } catch (error) {
+          console.log('Background: Backend sync failed, but user is still authenticated:', error);
+        }
+      }, 100); // Background sync after UI loads
+      
     } catch (error) {
-      console.log('Backend sync failed, but user is still authenticated:', error);
+      console.error('Error in fetchUserProfile:', error);
+      setLoading(false); // Always clear loading even on error
     }
-    
-    setLoading(false);
-    console.log('Loading set to false, user should see dashboard now');
   };
 
   useEffect(() => {
     let mounted = true;
     let isInitialLoad = true;
     
-    // Set a timeout to prevent infinite loading
+    // Set a timeout to prevent infinite loading - reduced to 2 seconds
     const loadingTimeout = setTimeout(() => {
       if (mounted) {
         console.error('Loading timeout reached, forcing loading to false');
         setLoading(false);
+        setUser(null); // Clear user if stuck loading
       }
-    }, 10000); // 10 second timeout
+    }, 2000); // 2 second timeout
     
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {

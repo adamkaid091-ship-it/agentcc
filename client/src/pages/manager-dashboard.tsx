@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Link, useLocation } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Submission } from "@shared/schema";
 
 export default function ManagerDashboard() {
@@ -23,24 +23,62 @@ export default function ManagerDashboard() {
   const [activeView, setActiveView] = useState("dashboard");
   const [selectedSubmission, setSelectedSubmission] = useState<(Submission & { agentName: string }) | null>(null);
 
+  const queryClient = useQueryClient();
+
   // Fetch real submissions data from API (manager only)
-  const { data: submissions = [], isLoading: submissionsLoading } = useQuery<(Submission & { agentName: string })[]>({
+  const { data: submissions = [], isLoading: submissionsLoading, refetch: refetchSubmissions } = useQuery<(Submission & { agentName: string })[]>({
     queryKey: ['/api/submissions'],
     queryFn: async () => {
-      const token = await getAccessToken();
-      const response = await fetch('/api/submissions', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      if (!response.ok) throw new Error('Failed to fetch submissions');
-      return response.json();
+      try {
+        const token = await getAccessToken();
+        console.log('Manager fetching submissions with token:', token ? 'Available' : 'Missing');
+        
+        if (!token) {
+          console.error('No token available for manager submissions');
+          throw new Error('Authentication token not available');
+        }
+
+        // First sync user to ensure they exist in backend
+        const userSyncResponse = await fetch('/api/user/profile', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+        
+        if (!userSyncResponse.ok) {
+          console.error('Manager user sync failed:', userSyncResponse.status);
+          throw new Error('Failed to authenticate manager');
+        }
+
+        console.log('Manager authenticated, fetching submissions...');
+        const response = await fetch('/api/submissions', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Submissions fetch failed:', response.status, errorText);
+          throw new Error(`Failed to fetch submissions: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Manager submissions loaded:', data.length, 'submissions');
+        return data;
+      } catch (error) {
+        console.error('Manager submissions query error:', error);
+        throw error;
+      }
     },
     enabled: user?.role === 'manager',
+    staleTime: 0, // Always fetch fresh data
+    refetchOnWindowFocus: true,
+    retry: 3, // Retry failed requests
   });
 
   // Fetch real statistics data from API (manager only)
-  const { data: stats = { total: 0, feeding: 0, maintenance: 0, todayCount: 0, activeAgents: 0 } } = useQuery<{
+  const { data: stats = { total: 0, feeding: 0, maintenance: 0, todayCount: 0, activeAgents: 0 }, refetch: refetchStats } = useQuery<{
     total: number;
     feeding: number;
     maintenance: number;
@@ -49,17 +87,84 @@ export default function ManagerDashboard() {
   }>({
     queryKey: ['/api/stats'],
     queryFn: async () => {
-      const token = await getAccessToken();
-      const response = await fetch('/api/stats', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      if (!response.ok) throw new Error('Failed to fetch stats');
-      return response.json();
+      try {
+        const token = await getAccessToken();
+        console.log('Manager fetching stats with token:', token ? 'Available' : 'Missing');
+        
+        if (!token) {
+          console.error('No token available for manager stats');
+          throw new Error('Authentication token not available');
+        }
+
+        console.log('Manager fetching stats...');
+        const response = await fetch('/api/stats', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Stats fetch failed:', response.status, errorText);
+          throw new Error(`Failed to fetch stats: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Manager stats loaded:', data);
+        return data;
+      } catch (error) {
+        console.error('Manager stats query error:', error);
+        throw error;
+      }
     },
     enabled: user?.role === 'manager',
+    staleTime: 0, // Always fetch fresh data
+    refetchOnWindowFocus: true,
+    retry: 3, // Retry failed requests
   });
+
+  // Refresh functions
+  const handleRefreshData = async () => {
+    toast({
+      title: "Refreshing Data",
+      description: "Fetching latest data from database...",
+    });
+    
+    try {
+      await Promise.all([refetchSubmissions(), refetchStats()]);
+      toast({
+        title: "Data Refreshed",
+        description: "Successfully updated all data from database.",
+      });
+    } catch (error) {
+      toast({
+        title: "Refresh Failed", 
+        description: "Failed to refresh data. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRefreshSubmissions = async () => {
+    toast({
+      title: "Refreshing Submissions",
+      description: "Fetching latest submissions...",
+    });
+    
+    try {
+      await refetchSubmissions();
+      toast({
+        title: "Submissions Refreshed",
+        description: "Successfully updated submissions data.",
+      });
+    } catch (error) {
+      toast({
+        title: "Refresh Failed",
+        description: "Failed to refresh submissions. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const exportData = (format: 'csv' | 'excel' | 'txt') => {
     const data = filteredSubmissions;
@@ -235,6 +340,16 @@ export default function ManagerDashboard() {
                 <i className="fas fa-bell text-muted-foreground"></i>
               </div>
               <div className="flex items-center space-x-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleRefreshData}
+                  data-testid="button-refresh-all"
+                  disabled={submissionsLoading}
+                >
+                  <i className={`fas fa-sync-alt mr-1 ${submissionsLoading ? 'animate-spin' : ''}`}></i>
+                  Refresh All
+                </Button>
                 <Link href="/agent">
                   <Button variant="outline" size="sm" data-testid="button-agent-view">
                     <i className="fas fa-user mr-1"></i>
@@ -628,6 +743,16 @@ export default function ManagerDashboard() {
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg">All Submissions ({filteredSubmissions.length})</CardTitle>
                     <div className="flex items-center space-x-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={handleRefreshSubmissions}
+                        data-testid="button-refresh-submissions"
+                        disabled={submissionsLoading}
+                      >
+                        <i className={`fas fa-sync-alt mr-1 ${submissionsLoading ? 'animate-spin' : ''}`}></i>
+                        Refresh
+                      </Button>
                       <div className="w-2 h-2 bg-accent rounded-full animate-pulse"></div>
                       <span className="text-sm text-muted-foreground">Live from Supabase</span>
                     </div>
