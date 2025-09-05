@@ -21,7 +21,7 @@ const client = postgres(databaseUrl, {
   prepare: false, // Disable prepared statements for pooler compatibility
   connection: {
     application_name: 'atm-service-portal',
-    statement_timeout: '30s', // 30 second statement timeout
+    statement_timeout: 30000, // 30 second statement timeout
   },
 });
 
