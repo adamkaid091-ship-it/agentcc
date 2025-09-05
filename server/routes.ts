@@ -6,6 +6,7 @@ import { storage } from "./storage";
 import { insertSubmissionSchema } from "@shared/schema";
 import { z } from "zod";
 import { authenticateToken, requireManager, type AuthenticatedRequest } from "./auth";
+import { supabaseAdmin } from "./supabase";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Simple health check route
@@ -176,6 +177,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: 'error', 
         message: 'Failed to fetch statistics',
         error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Create user (admin only - for setting up the system)
+  app.post('/api/admin/create-user', async (req, res) => {
+    try {
+      const { email, password, firstName, lastName, role = 'agent' } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ error: 'Email and password are required' });
+      }
+      
+      // Create user in Supabase Auth
+      const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true, // Skip email confirmation
+        user_metadata: {
+          first_name: firstName,
+          last_name: lastName,
+          name: `${firstName} ${lastName}`.trim()
+        }
+      });
+      
+      if (authError) {
+        console.error('Error creating user in Supabase Auth:', authError);
+        return res.status(400).json({ error: authError.message });
+      }
+      
+      // Create user in our database
+      if (authUser.user) {
+        await storage.upsertUser({
+          id: authUser.user.id,
+          email: authUser.user.email || email,
+          firstName: firstName || '',
+          lastName: lastName || '',
+          role: role as 'agent' | 'manager'
+        });
+      }
+      
+      res.json({ 
+        message: 'User created successfully',
+        user: {
+          id: authUser.user?.id,
+          email: authUser.user?.email,
+          role
+        }
+      });
+    } catch (error) {
+      console.error("Error creating user:", error);
+      res.status(500).json({ 
+        error: 'Failed to create user',
+        details: error instanceof Error ? error.message : 'Unknown error'
       });
     }
   });
