@@ -15,15 +15,23 @@ function getDatabaseUrl(): string {
   return databaseUrl;
 }
 
-// Create a fresh connection with better settings for Supabase pooler
+// Create a fresh connection optimized for Vercel serverless
 function createFreshConnection() {
-  const databaseUrl = getDatabaseUrl();
+  let databaseUrl = getDatabaseUrl();
+  
+  // Add required parameters for Vercel serverless if not present
+  if (!databaseUrl.includes('pgbouncer=true')) {
+    const separator = databaseUrl.includes('?') ? '&' : '?';
+    databaseUrl += `${separator}pgbouncer=true&connection_limit=1`;
+  }
+  
   return postgres(databaseUrl, {
     ssl: 'require',
-    max: 1, // Single connection for pooler
-    idle_timeout: 20, // Longer idle timeout
-    connect_timeout: 10, // Longer connect timeout
-    prepare: false, // Required for pooler compatibility
+    max: 1, // Single connection for serverless
+    idle_timeout: 30, // Longer timeout for Vercel
+    connect_timeout: 15, // Longer connect timeout for Vercel
+    prepare: false, // CRITICAL: Disable prepared statements for Supabase pooler
+    statement_timeout: 30000, // 30 second statement timeout
     connection: {
       application_name: 'atm-service-portal',
     },
@@ -31,6 +39,10 @@ function createFreshConnection() {
     transform: {
       undefined: null,
     },
+    // Vercel-specific optimizations
+    fetch_types: false,
+    publications: [],
+    idle_in_transaction_session_timeout: 10000,
   });
 }
 

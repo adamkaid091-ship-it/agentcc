@@ -32,18 +32,28 @@ if (missingVars.length > 0) {
     const postgres = require('postgres');
     const { createClient } = require('@supabase/supabase-js');
     
-    // Database setup using Supabase credentials
-    const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    const projectRef = supabaseUrl.replace('https://', '').split('.')[0];
-    const databaseUrl = `postgresql://postgres:${supabaseServiceRoleKey}@db.${projectRef}.supabase.co:5432/postgres`;
+    // Database setup using DATABASE_URL for Vercel
+    let databaseUrl = process.env.DATABASE_URL;
+    
+    if (!databaseUrl) {
+      console.error('DATABASE_URL not found, API will not work');
+      throw new Error('DATABASE_URL is required for database operations');
+    }
+    
+    // Add required parameters for Vercel serverless if not present
+    if (!databaseUrl.includes('pgbouncer=true')) {
+      const separator = databaseUrl.includes('?') ? '&' : '?';
+      databaseUrl += `${separator}pgbouncer=true&connection_limit=1`;
+    }
     
     const client = postgres(databaseUrl, {
       ssl: 'require',
-      max: 1,
-      idle_timeout: 20,
-      connect_timeout: 10,
-      prepare: false,
+      max: 1, // Single connection for Vercel serverless
+      idle_timeout: 30,
+      connect_timeout: 15,
+      prepare: false, // CRITICAL: Disable for Supabase pooler
+      statement_timeout: 30000,
+      fetch_types: false,
     });
     
     // Supabase setup
