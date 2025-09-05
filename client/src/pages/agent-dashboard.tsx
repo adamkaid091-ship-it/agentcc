@@ -141,28 +141,28 @@ export default function AgentDashboard() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="bg-gradient-to-r from-primary to-blue-600 shadow-lg sticky top-0 z-40">
-        <div className="px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-white/20 backdrop-blur rounded-full flex items-center justify-center shadow-md">
-              <i className="fas fa-user text-white text-lg"></i>
+        <div className="px-3 sm:px-4 py-3 sm:py-4 flex items-center justify-between">
+          <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 backdrop-blur rounded-full flex items-center justify-center shadow-md flex-shrink-0">
+              <i className="fas fa-user text-white text-sm sm:text-lg"></i>
             </div>
-            <div>
-              <h1 className="font-bold text-white text-lg" data-testid="text-agent-name">
+            <div className="min-w-0 flex-1">
+              <h1 className="font-bold text-white text-sm sm:text-lg truncate" data-testid="text-agent-name">
                 {user?.firstName || 'Field Agent'} - {user?.role === 'manager' ? 'Manager' : 'Agent'}
               </h1>
-              <p className="text-xs text-blue-100">{user?.email}</p>
+              <p className="text-xs text-blue-100 truncate">{user?.email}</p>
             </div>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
             {user?.role === 'manager' && (
               <Link href="/manager">
-                <Button variant="secondary" size="sm" className="bg-white/20 backdrop-blur hover:bg-white/30 text-white border-white/30" data-testid="button-manager-panel">
+                <Button variant="secondary" size="sm" className="bg-white/20 backdrop-blur hover:bg-white/30 text-white border-white/30 px-2 sm:px-3" data-testid="button-manager-panel">
                   <i className="fas fa-cogs mr-1"></i>
-                  Manager
+                  <span className="hidden sm:inline">Manager</span>
                 </Button>
               </Link>
             )}
-            <Button variant="ghost" size="sm" onClick={handleSignOut} className="text-white hover:bg-white/20" data-testid="button-logout">
+            <Button variant="ghost" size="sm" onClick={handleSignOut} className="text-white hover:bg-white/20 px-2 sm:px-3" data-testid="button-logout">
               <i className="fas fa-sign-out-alt"></i>
             </Button>
           </div>
@@ -172,14 +172,14 @@ export default function AgentDashboard() {
       {/* Main Content */}
       <main className="pb-20 md:pb-8">
         {/* Stats Overview */}
-        <div className="p-4">
-          <div className="grid grid-cols-2 gap-4 mb-6">
+        <div className="p-3 sm:p-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
             <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 shadow-lg">
-              <CardContent className="p-4">
+              <CardContent className="p-3 sm:p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-blue-600 font-semibold">Today's Visits</p>
-                    <p className="text-3xl font-bold text-blue-800" data-testid="text-today-visits">
+                    <p className="text-xs sm:text-sm text-blue-600 font-semibold">Today's Visits</p>
+                    <p className="text-2xl sm:text-3xl font-bold text-blue-800" data-testid="text-today-visits">
                       {submissions.filter(s => {
                         const today = new Date();
                         if (!s.createdAt) return false;
@@ -188,24 +188,24 @@ export default function AgentDashboard() {
                       }).length}
                     </p>
                   </div>
-                  <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center shadow-md">
-                    <i className="fas fa-clipboard-check text-white text-lg"></i>
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-500 rounded-full flex items-center justify-center shadow-md">
+                    <i className="fas fa-clipboard-check text-white text-sm sm:text-lg"></i>
                   </div>
                 </div>
               </CardContent>
             </Card>
             
             <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200 shadow-lg">
-              <CardContent className="p-4">
+              <CardContent className="p-3 sm:p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-green-600 font-semibold">Total Visits</p>
-                    <p className="text-3xl font-bold text-green-800" data-testid="text-total-visits">
+                    <p className="text-xs sm:text-sm text-green-600 font-semibold">Total Visits</p>
+                    <p className="text-2xl sm:text-3xl font-bold text-green-800" data-testid="text-total-visits">
                       {submissions.length}
                     </p>
                   </div>
-                  <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center shadow-md">
-                    <i className="fas fa-calendar-week text-white text-lg"></i>
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-500 rounded-full flex items-center justify-center shadow-md">
+                    <i className="fas fa-calendar-week text-white text-sm sm:text-lg"></i>
                   </div>
                 </div>
               </CardContent>
@@ -214,27 +214,27 @@ export default function AgentDashboard() {
         </div>
 
         {/* Data Submission Form */}
-        <div className="px-4">
+        <div className="px-3 sm:px-4">
           <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-gray-50">
-            <CardHeader className="pb-4 bg-gradient-to-r from-primary/10 to-primary/5 rounded-t-lg">
-              <CardTitle className="flex items-center text-xl text-primary">
-                <i className="fas fa-plus-circle mr-3 text-2xl"></i>
+            <CardHeader className="pb-3 sm:pb-4 bg-gradient-to-r from-primary/10 to-primary/5 rounded-t-lg">
+              <CardTitle className="flex items-center text-lg sm:text-xl text-primary">
+                <i className="fas fa-plus-circle mr-2 sm:mr-3 text-xl sm:text-2xl"></i>
                 New Visit Record
               </CardTitle>
-              <p className="text-sm text-primary/70 font-medium">Submit client visit information</p>
+              <p className="text-xs sm:text-sm text-primary/70 font-medium">Submit client visit information</p>
             </CardHeader>
             
-            <CardContent>
+            <CardContent className="p-4 sm:p-6">
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 sm:space-y-6">
                   <FormField
                     control={form.control}
                     name="clientName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Client Name</FormLabel>
+                        <FormLabel className="text-sm font-medium">Client Name *</FormLabel>
                         <FormControl>
-                          <Input placeholder="Enter client name" {...field} data-testid="input-client-name" />
+                          <Input placeholder="Enter client name" {...field} className="h-12 text-base" data-testid="input-client-name" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -246,19 +246,40 @@ export default function AgentDashboard() {
                     name="government"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Governorate</FormLabel>
+                        <FormLabel className="text-sm font-medium">Governorate *</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
-                            <SelectTrigger data-testid="select-government">
+                            <SelectTrigger className="h-12 text-base" data-testid="select-government">
                               <SelectValue placeholder="Select Governorate" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="cairo">Cairo</SelectItem>
-                            <SelectItem value="giza">Giza</SelectItem>
                             <SelectItem value="alexandria">Alexandria</SelectItem>
-                            <SelectItem value="qalyubia">Qalyubia</SelectItem>
+                            <SelectItem value="aswan">Aswan</SelectItem>
+                            <SelectItem value="asyut">Asyut</SelectItem>
+                            <SelectItem value="beheira">Beheira</SelectItem>
+                            <SelectItem value="beni-suef">Beni Suef</SelectItem>
+                            <SelectItem value="cairo">Cairo</SelectItem>
+                            <SelectItem value="dakahlia">Dakahlia</SelectItem>
+                            <SelectItem value="damietta">Damietta</SelectItem>
+                            <SelectItem value="fayyum">Fayyum</SelectItem>
+                            <SelectItem value="gharbia">Gharbia</SelectItem>
+                            <SelectItem value="giza">Giza</SelectItem>
+                            <SelectItem value="ismailia">Ismailia</SelectItem>
+                            <SelectItem value="kafr-el-sheikh">Kafr el-Sheikh</SelectItem>
+                            <SelectItem value="luxor">Luxor</SelectItem>
+                            <SelectItem value="matrouh">Matrouh</SelectItem>
+                            <SelectItem value="minya">Minya</SelectItem>
+                            <SelectItem value="monufia">Monufia</SelectItem>
+                            <SelectItem value="new-valley">New Valley</SelectItem>
+                            <SelectItem value="north-sinai">North Sinai</SelectItem>
                             <SelectItem value="port-said">Port Said</SelectItem>
+                            <SelectItem value="qalyubia">Qalyubia</SelectItem>
+                            <SelectItem value="qena">Qena</SelectItem>
+                            <SelectItem value="red-sea">Red Sea</SelectItem>
+                            <SelectItem value="sharqia">Sharqia</SelectItem>
+                            <SelectItem value="sohag">Sohag</SelectItem>
+                            <SelectItem value="south-sinai">South Sinai</SelectItem>
                             <SelectItem value="suez">Suez</SelectItem>
                           </SelectContent>
                         </Select>
@@ -272,9 +293,9 @@ export default function AgentDashboard() {
                     name="atmCode"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>ATM Code</FormLabel>
+                        <FormLabel className="text-sm font-medium">ATM Code *</FormLabel>
                         <FormControl>
-                          <Input placeholder="Enter ATM code" {...field} data-testid="input-atm-code" />
+                          <Input placeholder="Enter ATM code" {...field} className="h-12 text-base" data-testid="input-atm-code" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -286,18 +307,18 @@ export default function AgentDashboard() {
                     name="serviceType"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Service Type</FormLabel>
+                        <FormLabel className="text-sm font-medium">Service Type *</FormLabel>
                         <FormControl>
                           <RadioGroup
                             onValueChange={field.onChange}
                             value={field.value}
-                            className="grid grid-cols-2 gap-4"
+                            className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4"
                           >
                             <div className="relative">
                               <RadioGroupItem value="feeding" id="feeding" className="sr-only" />
                               <Label 
                                 htmlFor="feeding" 
-                                className="relative block cursor-pointer border-2 border-input rounded-lg p-4 transition-all duration-200 hover:bg-accent/50 hover:border-accent flex flex-col items-center justify-center min-h-[100px] bg-card data-[state=checked]:border-primary data-[state=checked]:bg-primary/10 data-[state=checked]:shadow-md"
+                                className="relative block cursor-pointer border-2 border-input rounded-lg p-4 transition-all duration-200 hover:bg-accent/50 hover:border-accent flex flex-col items-center justify-center min-h-[80px] sm:min-h-[100px] bg-card data-[state=checked]:border-primary data-[state=checked]:bg-primary/10 data-[state=checked]:shadow-md touch-manipulation"
                                 data-testid="radio-feeding"
                                 data-state={field.value === 'feeding' ? 'checked' : 'unchecked'}
                               >
@@ -310,7 +331,7 @@ export default function AgentDashboard() {
                               <RadioGroupItem value="maintenance" id="maintenance" className="sr-only" />
                               <Label 
                                 htmlFor="maintenance" 
-                                className="relative block cursor-pointer border-2 border-input rounded-lg p-4 transition-all duration-200 hover:bg-accent/50 hover:border-accent flex flex-col items-center justify-center min-h-[100px] bg-card data-[state=checked]:border-amber-500 data-[state=checked]:bg-amber-50 data-[state=checked]:shadow-md"
+                                className="relative block cursor-pointer border-2 border-input rounded-lg p-4 transition-all duration-200 hover:bg-accent/50 hover:border-accent flex flex-col items-center justify-center min-h-[80px] sm:min-h-[100px] bg-card data-[state=checked]:border-amber-500 data-[state=checked]:bg-amber-50 data-[state=checked]:shadow-md touch-manipulation"
                                 data-testid="radio-maintenance"
                                 data-state={field.value === 'maintenance' ? 'checked' : 'unchecked'}
                               >
@@ -339,11 +360,11 @@ export default function AgentDashboard() {
                     <p className="text-xs text-gray-500">Automatically captured on submission</p>
                   </div>
                   
-                  <div className="flex gap-4">
+                  <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-2">
                     <Button 
                       type="button" 
                       variant="outline" 
-                      className="flex-1 py-3 border-2 hover:bg-gray-50"
+                      className="flex-1 h-12 sm:py-3 border-2 hover:bg-gray-50 touch-manipulation"
                       onClick={() => form.reset()}
                       data-testid="button-cancel"
                     >
@@ -352,11 +373,16 @@ export default function AgentDashboard() {
                     </Button>
                     <Button 
                       type="submit" 
-                      className="flex-1 py-3 bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90 shadow-lg"
+                      disabled={createSubmissionMutation.isPending}
+                      className="flex-1 h-12 sm:py-3 bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90 shadow-lg disabled:opacity-50 touch-manipulation"
                       data-testid="button-submit-visit"
                     >
-                      <i className="fas fa-paper-plane mr-2"></i>
-                      Submit Visit
+                      {createSubmissionMutation.isPending ? (
+                        <i className="fas fa-spinner fa-spin mr-2"></i>
+                      ) : (
+                        <i className="fas fa-paper-plane mr-2"></i>
+                      )}
+                      {createSubmissionMutation.isPending ? 'Submitting...' : 'Submit Visit'}
                     </Button>
                   </div>
                 </form>

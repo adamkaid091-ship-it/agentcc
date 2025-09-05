@@ -72,21 +72,21 @@ export function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 py-6 px-4 sm:py-12 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md shadow-xl">
-        <CardHeader className="space-y-4 text-center">
-          <div className="mx-auto w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center">
-            <LogIn className="h-8 w-8 text-white" />
+        <CardHeader className="space-y-3 sm:space-y-4 text-center pb-4 sm:pb-6">
+          <div className="mx-auto w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center">
+            <LogIn className="h-7 w-7 sm:h-8 sm:w-8 text-white" />
           </div>
-          <CardTitle className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+          <CardTitle className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent leading-tight">
             ATM Service Operations Portal
           </CardTitle>
-          <CardDescription className="text-gray-600 dark:text-gray-400">
+          <CardDescription className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">
             Sign in to access your dashboard
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <form onSubmit={handleSignIn} className="space-y-4">
+        <CardContent className="space-y-5 sm:space-y-6 p-4 sm:p-6">
+          <form onSubmit={handleSignIn} className="space-y-4 sm:space-y-5">
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm font-medium">Email Address</Label>
               <Input
@@ -95,7 +95,7 @@ export function LoginForm() {
                 placeholder="Enter your email address"
                 value={signInData.email}
                 onChange={(e) => setSignInData(prev => ({ ...prev, email: e.target.value }))}
-                className="w-full h-12"
+                className="w-full h-12 sm:h-14 text-base sm:text-lg touch-manipulation"
                 disabled={isLoading}
                 required
                 data-testid="input-email"
@@ -111,7 +111,7 @@ export function LoginForm() {
                   placeholder="Enter your password"
                   value={signInData.password}
                   onChange={(e) => setSignInData(prev => ({ ...prev, password: e.target.value }))}
-                  className="w-full h-12 pr-12"
+                  className="w-full h-12 sm:h-14 pr-12 text-base sm:text-lg touch-manipulation"
                   disabled={isLoading}
                   required
                   data-testid="input-password"
@@ -120,7 +120,7 @@ export function LoginForm() {
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent touch-manipulation"
                   onClick={() => setShowPassword(!showPassword)}
                   disabled={isLoading}
                   data-testid="button-toggle-password"

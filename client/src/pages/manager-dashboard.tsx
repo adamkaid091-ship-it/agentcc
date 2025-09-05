@@ -316,35 +316,36 @@ export default function ManagerDashboard() {
 
       {/* Main Dashboard Content */}
       <div className="md:pl-64">
-        <header className="bg-card border-b border-border px-6 py-4">
+        <header className="bg-card border-b border-border px-3 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-semibold text-card-foreground">Operations Dashboard</h1>
-              <p className="text-sm text-muted-foreground">Real-time field agent submissions</p>
+            <div className="min-w-0 flex-1">
+              <h1 className="text-lg sm:text-xl font-semibold text-card-foreground truncate">Operations Dashboard</h1>
+              <p className="text-xs sm:text-sm text-muted-foreground">Real-time field agent submissions</p>
             </div>
-            <div className="flex items-center space-x-3">
-              <div className="relative">
+            <div className="flex items-center space-x-1 sm:space-x-3 flex-shrink-0">
+              <div className="relative hidden sm:block">
                 <div className="w-2 h-2 bg-accent rounded-full animate-pulse absolute -top-1 -right-1"></div>
                 <i className="fas fa-bell text-muted-foreground"></i>
               </div>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-1 sm:space-x-2">
                 <Button 
                   variant="outline" 
                   size="sm" 
                   onClick={handleRefreshData}
                   data-testid="button-refresh-all"
                   disabled={submissionsLoading}
+                  className="px-2 sm:px-3"
                 >
-                  <i className={`fas fa-sync-alt mr-1 ${submissionsLoading ? 'animate-spin' : ''}`}></i>
-                  Refresh All
+                  <i className={`fas fa-sync-alt ${submissionsLoading ? 'animate-spin' : ''} ${window.innerWidth >= 640 ? 'mr-1' : ''}`}></i>
+                  <span className="hidden sm:inline">Refresh All</span>
                 </Button>
                 <Link href="/agent">
-                  <Button variant="outline" size="sm" data-testid="button-agent-view">
-                    <i className="fas fa-user mr-1"></i>
-                    Agent View
+                  <Button variant="outline" size="sm" data-testid="button-agent-view" className="px-2 sm:px-3">
+                    <i className={`fas fa-user ${window.innerWidth >= 640 ? 'mr-1' : ''}`}></i>
+                    <span className="hidden sm:inline">Agent View</span>
                   </Button>
                 </Link>
-                <Button variant="ghost" size="sm" onClick={handleLogout} data-testid="button-logout">
+                <Button variant="ghost" size="sm" onClick={handleLogout} data-testid="button-logout" className="px-2 sm:px-3">
                   <i className="fas fa-sign-out-alt"></i>
                 </Button>
               </div>
@@ -352,20 +353,20 @@ export default function ManagerDashboard() {
           </div>
         </header>
 
-        <main className="p-6">
+        <main className="p-3 sm:p-6 pb-20 md:pb-6">
           {activeView === 'dashboard' && (
             <>
           {/* Stats Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
             <Card className="bg-gradient-to-br from-card to-muted">
-              <CardContent className="p-6">
+              <CardContent className="p-3 sm:p-6">
                 <div className="flex items-center">
-                  <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                    <i className="fas fa-clipboard-list text-primary text-xl"></i>
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                    <i className="fas fa-clipboard-list text-primary text-lg sm:text-xl"></i>
                   </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-muted-foreground">Total Submissions</p>
-                    <p className="text-2xl font-bold text-card-foreground" data-testid="stat-total-submissions">
+                  <div className="ml-3 sm:ml-4 min-w-0">
+                    <p className="text-xs sm:text-sm font-medium text-muted-foreground truncate">Total Submissions</p>
+                    <p className="text-xl sm:text-2xl font-bold text-card-foreground" data-testid="stat-total-submissions">
                       {stats.total}
                     </p>
                   </div>
@@ -374,14 +375,14 @@ export default function ManagerDashboard() {
             </Card>
             
             <Card className="bg-gradient-to-br from-card to-muted">
-              <CardContent className="p-6">
+              <CardContent className="p-3 sm:p-6">
                 <div className="flex items-center">
-                  <div className="w-12 h-12 bg-accent/10 rounded-lg flex items-center justify-center">
-                    <i className="fas fa-users text-accent text-xl"></i>
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-accent/10 rounded-lg flex items-center justify-center">
+                    <i className="fas fa-users text-accent text-lg sm:text-xl"></i>
                   </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-muted-foreground">Total Users</p>
-                    <p className="text-2xl font-bold text-card-foreground" data-testid="stat-active-agents">
+                  <div className="ml-3 sm:ml-4 min-w-0">
+                    <p className="text-xs sm:text-sm font-medium text-muted-foreground truncate">Total Users</p>
+                    <p className="text-xl sm:text-2xl font-bold text-card-foreground" data-testid="stat-active-agents">
                       {stats.activeAgents}
                     </p>
                   </div>
@@ -390,14 +391,14 @@ export default function ManagerDashboard() {
             </Card>
             
             <Card className="bg-gradient-to-br from-card to-muted">
-              <CardContent className="p-6">
+              <CardContent className="p-3 sm:p-6">
                 <div className="flex items-center">
-                  <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                    <i className="fas fa-plug text-primary text-xl"></i>
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                    <i className="fas fa-plug text-primary text-lg sm:text-xl"></i>
                   </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-muted-foreground" dir="rtl">تغذية</p>
-                    <p className="text-2xl font-bold text-card-foreground" data-testid="stat-feeding-services">
+                  <div className="ml-3 sm:ml-4 min-w-0">
+                    <p className="text-xs sm:text-sm font-medium text-muted-foreground truncate" dir="rtl">تغذية</p>
+                    <p className="text-xl sm:text-2xl font-bold text-card-foreground" data-testid="stat-feeding-services">
                       {stats.feeding}
                     </p>
                   </div>

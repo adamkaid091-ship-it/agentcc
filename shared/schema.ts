@@ -51,6 +51,11 @@ export const insertSubmissionSchema = createInsertSchema(submissions).pick({
   government: true,
   atmCode: true,
   serviceType: true,
+}).extend({
+  clientName: z.string().min(1, "Client name is required").min(2, "Client name must be at least 2 characters"),
+  government: z.string().min(1, "Please select a governorate"),
+  atmCode: z.string().min(1, "ATM code is required").min(2, "ATM code must be at least 2 characters"),
+  serviceType: z.enum(["feeding", "maintenance"], { required_error: "Please select a service type" }),
 });
 
 export type UpsertUser = typeof users.$inferInsert;
