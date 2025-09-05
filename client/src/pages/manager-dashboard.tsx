@@ -31,26 +31,14 @@ export default function ManagerDashboard() {
     queryFn: async () => {
       try {
         const token = await getAccessToken();
-        console.log('Manager fetching submissions with token:', token ? 'Available' : 'Missing');
+        console.log('Manager fetching ALL submissions with token:', token ? 'Available' : 'Missing');
         
         if (!token) {
           console.error('No token available for manager submissions');
           throw new Error('Authentication token not available');
         }
 
-        // First sync user to ensure they exist in backend
-        const userSyncResponse = await fetch('/api/user/profile', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-        
-        if (!userSyncResponse.ok) {
-          console.error('Manager user sync failed:', userSyncResponse.status);
-          throw new Error('Failed to authenticate manager');
-        }
-
-        console.log('Manager authenticated, fetching submissions...');
+        console.log('Manager fetching all submissions from all agents...');
         const response = await fetch('/api/submissions', {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -59,15 +47,15 @@ export default function ManagerDashboard() {
         
         if (!response.ok) {
           const errorText = await response.text();
-          console.error('Submissions fetch failed:', response.status, errorText);
-          throw new Error(`Failed to fetch submissions: ${response.status}`);
+          console.error('All submissions fetch failed:', response.status, errorText);
+          throw new Error(`Failed to fetch all submissions: ${response.status}`);
         }
         
         const data = await response.json();
-        console.log('Manager submissions loaded:', data.length, 'submissions');
+        console.log('Manager all submissions loaded:', data.length, 'submissions from all agents');
         return data;
       } catch (error) {
-        console.error('Manager submissions query error:', error);
+        console.error('Manager all submissions query error:', error);
         throw error;
       }
     },
@@ -424,7 +412,7 @@ export default function ManagerDashboard() {
                     <i className="fas fa-wrench text-accent text-xl"></i>
                   </div>
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-muted-foreground" dir="rtl">صيانة</p>
+                    <p className="text-sm font-medium text-muted-foreground" dir="rtl">🔧 صيانة</p>
                     <p className="text-2xl font-bold text-card-foreground" data-testid="stat-maintenance-services">
                       {stats.maintenance}
                     </p>
