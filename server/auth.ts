@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { isAuthenticated } from './replitAuth';
+import { supabase } from './supabase';
 import { db } from './db';
 import { users } from '@shared/schema';
 import { eq } from 'drizzle-orm';
@@ -16,33 +16,34 @@ export interface AuthenticatedRequest extends Omit<Request, 'user'> {
 
 export async function authenticateToken(req: AuthenticatedRequest, res: Response, next: NextFunction) {
   try {
-    // Check if user is authenticated via Replit OAuth session
-    if (!req.isAuthenticated() || !req.user) {
-      return res.status(401).json({ error: 'Authentication required' });
+    const authHeader = req.headers.authorization;
+    const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+
+    if (!token) {
+      return res.status(401).json({ error: 'Access token required' });
     }
 
-    const sessionUser = req.user as any;
+    // Verify the token with Supabase
+    const { data, error } = await supabase.auth.getUser(token);
     
-    // Get user claims from Replit OAuth
-    const claims = sessionUser.claims;
-    if (!claims || !claims.sub || !claims.email) {
-      return res.status(401).json({ error: 'Invalid session' });
+    if (error || !data.user) {
+      return res.status(401).json({ error: 'Invalid token' });
     }
 
     // Get or create user in our database
     let dbUser = await db.query.users.findFirst({
-      where: eq(users.id, claims.sub)
+      where: eq(users.id, data.user.id)
     });
 
     // Auto-create user if they don't exist
     if (!dbUser) {
       const [newUser] = await db.insert(users).values({
-        id: claims.sub,
-        email: claims.email,
-        firstName: claims.first_name || '',
-        lastName: claims.last_name || '',
-        profileImageUrl: claims.profile_image_url,
-        role: 'agent' // Default role
+        id: data.user.id,
+        email: data.user.email || '',
+        firstName: data.user.user_metadata?.first_name || data.user.user_metadata?.name?.split(' ')[0] || '',
+        lastName: data.user.user_metadata?.last_name || data.user.user_metadata?.name?.split(' ').slice(1).join(' ') || '',
+        profileImageUrl: data.user.user_metadata?.avatar_url,
+        role: 'agent' // Default role as requested
       }).returning();
       
       dbUser = newUser;
