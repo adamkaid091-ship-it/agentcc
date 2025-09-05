@@ -10,7 +10,7 @@ export interface AuthenticatedRequest extends Omit<Request, 'user'> {
     email: string;
     firstName?: string;
     lastName?: string;
-    role: 'agent' | 'manager';
+    role: 'agent' | 'manager' | 'admin';
   };
 }
 
@@ -55,7 +55,7 @@ export async function authenticateToken(req: AuthenticatedRequest, res: Response
       email: dbUser.email,
       firstName: dbUser.firstName || undefined,
       lastName: dbUser.lastName || undefined,
-      role: dbUser.role as 'agent' | 'manager'
+      role: dbUser.role as 'agent' | 'manager' | 'admin'
     };
 
     next();
@@ -70,8 +70,20 @@ export const requireManager = async (req: AuthenticatedRequest, res: Response, n
     return res.status(401).json({ error: 'Not authenticated' });
   }
   
-  if (req.user.role !== 'manager') {
-    return res.status(403).json({ error: 'Manager role required' });
+  if (req.user.role !== 'manager' && req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Manager or admin role required' });
+  }
+  
+  next();
+};
+
+export const requireAdmin = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  if (!req.user) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+  
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Admin role required' });
   }
   
   next();

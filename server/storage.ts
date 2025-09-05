@@ -15,6 +15,7 @@ export interface IStorage {
   // (IMPORTANT) these user operations are mandatory for Replit Auth.
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
+  updateUserRole(email: string, role: string): Promise<User | undefined>;
   
   // Submission operations
   createSubmission(submission: InsertSubmission & { agentId: string }): Promise<Submission>;
@@ -123,6 +124,15 @@ export class DatabaseStorage implements IStorage {
       .from(users)
       .where(eq(users.role, 'agent'));
     return agents.length;
+  }
+
+  async updateUserRole(email: string, role: string): Promise<User | undefined> {
+    const [user] = await db
+      .update(users)
+      .set({ role: role as 'agent' | 'manager' | 'admin', updatedAt: new Date() })
+      .where(eq(users.email, email))
+      .returning();
+    return user;
   }
 }
 

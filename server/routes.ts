@@ -41,7 +41,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           first_name VARCHAR,
           last_name VARCHAR,
           profile_image_url VARCHAR,
-          role VARCHAR DEFAULT 'agent' CHECK (role IN ('agent', 'manager')),
+          role VARCHAR DEFAULT 'agent' CHECK (role IN ('agent', 'manager', 'admin')),
           created_at TIMESTAMP DEFAULT NOW(),
           updated_at TIMESTAMP DEFAULT NOW()
         )
@@ -211,7 +211,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           email: authUser.user.email || email,
           firstName: firstName || '',
           lastName: lastName || '',
-          role: role as 'agent' | 'manager'
+          role: role as 'agent' | 'manager' | 'admin'
         });
       }
       
@@ -227,6 +227,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error creating user:", error);
       res.status(500).json({ 
         error: 'Failed to create user',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Update user role (admin endpoint for initial setup)
+  app.post('/api/admin/update-role', async (req, res) => {
+    try {
+      const { email, role } = req.body;
+      
+      if (!email || !role) {
+        return res.status(400).json({ error: 'Email and role are required' });
+      }
+      
+      if (!['agent', 'manager', 'admin'].includes(role)) {
+        return res.status(400).json({ error: 'Invalid role. Must be agent, manager, or admin' });
+      }
+      
+      // Update user role in database
+      const updatedUser = await storage.updateUserRole(email, role);
+      
+      if (!updatedUser) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      
+      res.json({ 
+        message: 'User role updated successfully',
+        user: {
+          email: updatedUser.email,
+          role: updatedUser.role
+        }
+      });
+    } catch (error) {
+      console.error("Error updating user role:", error);
+      res.status(500).json({ 
+        error: 'Failed to update user role',
         details: error instanceof Error ? error.message : 'Unknown error'
       });
     }
