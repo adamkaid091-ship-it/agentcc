@@ -8,7 +8,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 // Add error handling for missing environment variables
-const requiredEnvVars = ['POSTGRES_URL', 'SUPABASE_URL', 'SUPABASE_ANON_KEY', 'SUPABASE_SERVICE_ROLE_KEY'];
+const requiredEnvVars = ['SUPABASE_URL', 'SUPABASE_ANON_KEY', 'SUPABASE_SERVICE_ROLE_KEY'];
 const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
 
 if (missingVars.length > 0) {
@@ -32,8 +32,12 @@ if (missingVars.length > 0) {
     const postgres = require('postgres');
     const { createClient } = require('@supabase/supabase-js');
     
-    // Database setup
-    const databaseUrl = process.env.POSTGRES_URL;
+    // Database setup using Supabase credentials
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const projectRef = supabaseUrl.replace('https://', '').split('.')[0];
+    const databaseUrl = `postgresql://postgres.${projectRef}:${supabaseServiceRoleKey}@aws-0-us-west-1.pooler.supabase.com:5432/postgres`;
+    
     const client = postgres(databaseUrl, {
       ssl: 'require',
       max: 1,

@@ -2,15 +2,20 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from "@shared/schema";
 
-// Use Supabase database connection string
-const databaseUrl = process.env.SUPABASE_DB_URL || process.env.POSTGRES_URL || process.env.DATABASE_URL;
+// Use Supabase credentials to construct database connection
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!databaseUrl) {
-  console.error("Environment variables available:", Object.keys(process.env).filter(key => key.includes('DATABASE') || key.includes('POSTGRES')));
+if (!supabaseUrl || !supabaseServiceRoleKey) {
+  console.error("Environment variables available:", Object.keys(process.env).filter(key => key.includes('SUPABASE')));
   throw new Error(
-    "DATABASE_URL or POSTGRES_URL must be set. For Vercel deployment with Supabase, use POSTGRES_URL with IPv4-compatible pooler connection string.",
+    "SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set. Please provide your Supabase credentials.",
   );
 }
+
+// Extract project reference from Supabase URL
+const projectRef = supabaseUrl.replace('https://', '').split('.')[0];
+const databaseUrl = `postgresql://postgres.${projectRef}:${supabaseServiceRoleKey}@aws-0-us-west-1.pooler.supabase.com:5432/postgres`;
 
 // Create a new connection for each request to avoid pool hanging
 function createFreshConnection() {
