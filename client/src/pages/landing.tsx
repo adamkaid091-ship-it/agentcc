@@ -1,25 +1,64 @@
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+
+const loginSchema = z.object({
+  email: z.string().email("Please enter a valid email"),
+  password: z.string().min(1, "Password is required"),
+});
+
+type LoginForm = z.infer<typeof loginSchema>;
 
 export default function Landing() {
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { signIn } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = async () => {
+  const form = useForm<LoginForm>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
+
+  const onSubmit = async (data: LoginForm) => {
     setIsLoading(true);
+    
     try {
-      // Redirect to Replit Auth login endpoint
-      window.location.href = '/api/login';
+      const { error } = await signIn(data.email, data.password);
+      
+      if (error) {
+        toast({
+          title: "Login Failed",
+          description: error,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Login Successful",
+          description: "Welcome to Field Agent System!",
+        });
+        // Navigation will be handled by AuthContext/App.tsx based on user role
+      }
     } catch (error) {
       toast({
         title: "Login Error",
-        description: "Unable to initiate login. Please try again.",
+        description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
-      setIsLoading(false);
     }
+    
+    setIsLoading(false);
   };
 
   return (
@@ -34,23 +73,57 @@ export default function Landing() {
         </CardHeader>
         
         <CardContent>
-          <div className="space-y-6">
-            <div className="text-center">
-              <p className="text-muted-foreground mb-6">
-                Sign in with your Replit account to access the Field Agent System
-              </p>
-            </div>
-            
-            <Button 
-              onClick={handleLogin}
-              className="w-full py-6 text-lg font-medium"
-              disabled={isLoading}
-              data-testid="button-login"
-            >
-              <i className="fas fa-sign-in-alt mr-2"></i>
-              {isLoading ? "Redirecting..." : "Sign in with Replit"}
-            </Button>
-          </div>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="email" 
+                        placeholder="Enter your email" 
+                        {...field} 
+                        data-testid="input-email"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="password" 
+                        placeholder="Enter your password" 
+                        {...field}
+                        data-testid="input-password"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <Button 
+                type="submit" 
+                className="w-full py-6 text-lg font-medium"
+                disabled={isLoading}
+                data-testid="button-login"
+              >
+                <i className="fas fa-sign-in-alt mr-2"></i>
+                {isLoading ? "Signing in..." : "Sign In"}
+              </Button>
+            </form>
+          </Form>
         </CardContent>
       </Card>
     </div>
