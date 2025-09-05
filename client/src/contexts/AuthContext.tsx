@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { User as SupabaseUser } from '@supabase/supabase-js';
+import { queryClient } from '@/lib/queryClient';
 
 interface User {
   id: string;
@@ -189,8 +190,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSupabaseUser(null);
       setLoading(false);
       
-      // Call Supabase signOut
-      const { error } = await supabase.auth.signOut();
+      // Clear all query cache to ensure fresh data on next login
+      try {
+        queryClient.clear();
+        queryClient.removeQueries();
+        console.log('Cleared all query cache');
+      } catch (cacheError) {
+        console.warn('Could not clear query cache:', cacheError);
+      }
+      
+      // Clear all localStorage data that might persist sessions
+      try {
+        localStorage.clear();
+        sessionStorage.clear();
+        console.log('Cleared all storage');
+      } catch (storageError) {
+        console.warn('Could not clear storage:', storageError);
+      }
+      
+      // Call Supabase signOut with scope: 'global' to clear all sessions
+      const { error } = await supabase.auth.signOut({ scope: 'global' });
       
       if (error) {
         console.error('Error during sign out:', error);
@@ -198,18 +217,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('Successfully signed out');
       }
       
-      // Force a page reload to clear any cached state
+      // Force a complete page reload to ensure clean state
       setTimeout(() => {
-        window.location.reload();
+        window.location.href = window.location.origin;
       }, 100);
       
     } catch (error) {
       console.error('Sign out failed:', error);
-      // Even if sign out fails, clear local state
+      // Even if sign out fails, clear local state and reload
       setUser(null);
       setSupabaseUser(null);
       setLoading(false);
-      window.location.reload();
+      
+      try {
+        queryClient.clear();
+        queryClient.removeQueries();
+        localStorage.clear();
+        sessionStorage.clear();
+      } catch (cleanupError) {
+        console.warn('Could not complete cleanup:', cleanupError);
+      }
+      
+      window.location.href = window.location.origin;
     }
   };
 

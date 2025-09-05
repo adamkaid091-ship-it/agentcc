@@ -6,7 +6,7 @@ import {
   type Submission,
   type InsertSubmission,
 } from "@shared/schema";
-import { db } from "./db";
+import { db, getFreshDb } from "./db";
 import { eq, desc } from "drizzle-orm";
 
 // Interface for storage operations
@@ -35,8 +35,20 @@ export class DatabaseStorage implements IStorage {
   // (IMPORTANT) these user operations are mandatory for Replit Auth.
 
   async getUser(id: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user;
+    try {
+      const [user] = await db.select().from(users).where(eq(users.id, id));
+      return user;
+    } catch (error) {
+      console.warn('Primary DB connection failed for getUser, trying fresh connection:', error);
+      try {
+        const freshDb = getFreshDb();
+        const [user] = await freshDb.select().from(users).where(eq(users.id, id));
+        return user;
+      } catch (freshError) {
+        console.error('Fresh DB connection also failed for getUser:', freshError);
+        throw freshError;
+      }
+    }
   }
 
   async upsertUser(userData: UpsertUser): Promise<User> {

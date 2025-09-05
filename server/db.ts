@@ -12,24 +12,36 @@ if (!databaseUrl) {
   );
 }
 
-// Create a simpler, more reliable connection configuration
-const client = postgres(databaseUrl, {
-  ssl: 'require',
-  max: 1, // Single connection to avoid pool issues
-  idle_timeout: 10,
-  connect_timeout: 3,
-  prepare: false, // Disable prepared statements for pooler compatibility
-  connection: {
-    application_name: 'atm-service-portal',
-    statement_timeout: 3000, // 3 second timeout
-  },
-  onnotice: () => {}, // Suppress notices
-  transform: {
-    undefined: null,
-  },
-});
+// Create a new connection for each request to avoid pool hanging
+function createFreshConnection() {
+  return postgres(databaseUrl!, {
+    ssl: 'require',
+    max: 1, // Single connection
+    idle_timeout: 5,
+    connect_timeout: 2,
+    prepare: false, // Disable prepared statements for pooler compatibility
+    connection: {
+      application_name: 'atm-service-portal',
+      statement_timeout: 2000, // 2 second timeout
+    },
+    onnotice: () => {}, // Suppress notices
+    transform: {
+      undefined: null,
+    },
+    // Auto-end connection after use
+    max_lifetime: 30, // 30 seconds max lifetime
+  });
+}
 
+// Main connection
+const client = createFreshConnection();
 export const db = drizzle(client, { schema });
+
+// Function to get a fresh database connection when needed
+export function getFreshDb() {
+  const freshClient = createFreshConnection();
+  return drizzle(freshClient, { schema });
+}
 
 // Test connection function
 export async function testConnection() {

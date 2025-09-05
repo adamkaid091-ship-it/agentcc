@@ -49,20 +49,34 @@ export default function AgentDashboard() {
   const queryClient = useQueryClient();
 
   // Fetch current user's submissions
-  const { data: submissions = [], isLoading } = useQuery<Submission[]>({
+  const { data: submissions = [], isLoading, refetch: refetchSubmissions } = useQuery<Submission[]>({
     queryKey: ['/api/submissions/my'],
     queryFn: async () => {
       const token = await getAccessToken();
+      if (!token) {
+        console.error('No token available for fetching submissions');
+        throw new Error('Authentication required');
+      }
+      
+      console.log('Agent fetching MY submissions...');
       const response = await fetch('/api/submissions/my', {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
-      if (!response.ok) throw new Error('Failed to fetch submissions');
-      return response.json();
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Agent submissions fetch failed:', response.status, errorText);
+        throw new Error(`Failed to fetch submissions: ${response.status}`);
+      }
+      const data = await response.json();
+      console.log('Agent submissions loaded:', data.length, 'submissions');
+      return data;
     },
+    enabled: !!user, // Only fetch when user is authenticated
     staleTime: 0, // Always fetch fresh data
     refetchOnWindowFocus: true,
+    retry: 3, // Retry failed requests
   });
 
   // Create submission mutation
