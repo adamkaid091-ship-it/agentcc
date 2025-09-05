@@ -502,7 +502,7 @@ export default function AgentDashboard() {
             <i className="fas fa-history text-lg mb-1"></i>
             <span className="text-xs">History</span>
           </button>
-          {userRole === 'manager' ? (
+          {user?.role === 'manager' ? (
             <Link href="/manager">
               <button className="flex flex-col items-center py-2 text-muted-foreground w-full" data-testid="nav-manager">
                 <i className="fas fa-cogs text-lg mb-1"></i>
@@ -511,7 +511,7 @@ export default function AgentDashboard() {
             </Link>
           ) : (
             <button 
-              onClick={handleLogout}
+              onClick={handleSignOut}
               className="flex flex-col items-center py-2 text-muted-foreground" 
               data-testid="nav-logout"
             >
