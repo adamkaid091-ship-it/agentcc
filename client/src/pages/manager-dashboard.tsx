@@ -28,6 +28,31 @@ export default function ManagerDashboard() {
   // Fetch real submissions data from API (manager only)
   const { data: submissions = [], isLoading: submissionsLoading, refetch: refetchSubmissions } = useQuery<(Submission & { agentName: string })[]>({
     queryKey: ['/api/submissions'],
+    queryFn: async () => {
+      console.log('Manager fetching ALL submissions...');
+      const token = await getAccessToken();
+      
+      if (!token) {
+        console.error('No token available for manager submissions');
+        throw new Error('Authentication token not available');
+      }
+
+      const response = await fetch('/api/submissions', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Manager submissions fetch failed:', response.status, errorText);
+        throw new Error(`Failed to fetch submissions: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('Manager submissions loaded:', data.length, 'submissions');
+      return data;
+    },
     enabled: user?.role === 'manager',
     staleTime: 0, // Always fetch fresh data
     refetchOnWindowFocus: true,
@@ -43,6 +68,31 @@ export default function ManagerDashboard() {
     activeAgents: number;
   }>({
     queryKey: ['/api/stats'],
+    queryFn: async () => {
+      console.log('Manager fetching stats...');
+      const token = await getAccessToken();
+      
+      if (!token) {
+        console.error('No token available for manager stats');
+        throw new Error('Authentication token not available');
+      }
+
+      const response = await fetch('/api/stats', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Manager stats fetch failed:', response.status, errorText);
+        throw new Error(`Failed to fetch stats: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('Manager stats loaded:', data);
+      return data;
+    },
     enabled: user?.role === 'manager',
     staleTime: 0, // Always fetch fresh data
     refetchOnWindowFocus: true,

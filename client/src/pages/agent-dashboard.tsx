@@ -51,6 +51,16 @@ export default function AgentDashboard() {
   // Fetch current user's submissions
   const { data: submissions = [], isLoading } = useQuery<Submission[]>({
     queryKey: ['/api/submissions/my'],
+    queryFn: async () => {
+      const token = await getAccessToken();
+      const response = await fetch('/api/submissions/my', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) throw new Error('Failed to fetch submissions');
+      return response.json();
+    },
     staleTime: 0, // Always fetch fresh data
     refetchOnWindowFocus: true,
   });
