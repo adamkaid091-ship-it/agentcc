@@ -34,15 +34,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const fetchUserProfile = async (supabaseUser: SupabaseUser, isInitialLoad: boolean = false) => {
     console.log('Creating user profile from Supabase data, isInitialLoad:', isInitialLoad);
     
+    // Determine role based on email or metadata
+    const email = supabaseUser.email || '';
+    const isManager = email.includes('admin') || 
+                     email.includes('manager') || 
+                     supabaseUser.user_metadata?.role === 'manager' ||
+                     email.endsWith('@company.com'); // Admin emails typically get manager role
+    
     // Bypass API call completely - just use Supabase user data directly
     const userData = {
       id: supabaseUser.id,
-      email: supabaseUser.email || '',
+      email: email,
       firstName: supabaseUser.user_metadata?.first_name || supabaseUser.user_metadata?.name?.split(' ')[0] || '',
       lastName: supabaseUser.user_metadata?.last_name || supabaseUser.user_metadata?.name?.split(' ').slice(1).join(' ') || '',
-      role: 'agent' as const
+      role: isManager ? 'manager' as const : 'agent' as const
     };
     
+    console.log('Role detection - email:', email, 'isManager:', isManager, 'final role:', userData.role);
     console.log('Setting user data:', userData);
     setUser(userData);
     setLoading(false);
