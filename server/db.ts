@@ -2,16 +2,22 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from "@shared/schema";
 
-if (!process.env.DATABASE_URL) {
+// Check for IPv4-compatible Supabase connection string first
+const databaseUrl = process.env.POSTGRES_URL || process.env.DATABASE_URL;
+
+if (!databaseUrl) {
   throw new Error(
-    "DATABASE_URL must be set. Did you forget to provision a database?",
+    "DATABASE_URL or POSTGRES_URL must be set. For Vercel deployment with Supabase, use POSTGRES_URL with IPv4-compatible pooler connection string.",
   );
 }
 
-const client = postgres(process.env.DATABASE_URL, {
+// Use IPv4-compatible connection with optimized settings for serverless
+const client = postgres(databaseUrl, {
   ssl: 'require',
-  max: 10,
+  max: 1, // Reduced for serverless environments
   idle_timeout: 20,
   connect_timeout: 10,
+  prepare: false, // Disable prepared statements for pooler compatibility
 });
+
 export const db = drizzle(client, { schema });
