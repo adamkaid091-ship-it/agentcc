@@ -47,7 +47,7 @@ export default function Landing() {
       } else {
         toast({
           title: "Login Successful",
-          description: "Welcome to Field Agent System!",
+          description: "Welcome to ATM Service Operations Portal!",
         });
         // Don't set loading to false here - let AuthContext handle it
         // after successful authentication and profile fetch
@@ -69,7 +69,7 @@ export default function Landing() {
           <div className="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
             <i className="fas fa-user-shield text-2xl text-primary"></i>
           </div>
-          <CardTitle className="text-2xl font-bold text-card-foreground mb-2">Field Agent System</CardTitle>
+          <CardTitle className="text-2xl font-bold text-card-foreground mb-2">ATM Service Operations Portal</CardTitle>
           <p className="text-muted-foreground">Secure login for field operations</p>
         </CardHeader>
         

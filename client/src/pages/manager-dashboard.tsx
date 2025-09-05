@@ -380,7 +380,7 @@ export default function ManagerDashboard() {
                     <i className="fas fa-users text-accent text-xl"></i>
                   </div>
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-muted-foreground">Active Agents</p>
+                    <p className="text-sm font-medium text-muted-foreground">Total Users</p>
                     <p className="text-2xl font-bold text-card-foreground" data-testid="stat-active-agents">
                       {stats.activeAgents}
                     </p>

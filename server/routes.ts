@@ -11,7 +11,7 @@ import { supabaseAdmin } from "./supabase";
 export async function registerRoutes(app: Express): Promise<Server> {
   // Simple health check route
   app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok', message: 'Field Agent System API' });
+    res.json({ status: 'ok', message: 'ATM Service Operations Portal API' });
   });
 
   // Database initialization endpoint

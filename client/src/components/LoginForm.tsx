@@ -79,7 +79,7 @@ export function LoginForm() {
             <LogIn className="h-8 w-8 text-white" />
           </div>
           <CardTitle className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-            Field Agent System
+            ATM Service Operations Portal
           </CardTitle>
           <CardDescription className="text-gray-600 dark:text-gray-400">
             Sign in to access your dashboard
