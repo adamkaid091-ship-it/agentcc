@@ -73,6 +73,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
+    let isInitialLoad = true;
+    
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       console.log('Initial session:', session?.user ? 'User found' : 'No user');
@@ -94,23 +96,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSupabaseUser(session?.user ?? null);
         
         if (event === 'SIGNED_IN' && session?.user) {
-          // Check if this is truly a new sign-in or just a token refresh
-          if (!user) {
-            // This is a new sign-in, show loading
-            await fetchUserProfile(session.user, true);
-          } else {
-            // This is likely a token refresh, don't show loading
-            await fetchUserProfile(session.user, false);
-          }
+          // Only show loading for the first sign-in, not subsequent token refreshes
+          await fetchUserProfile(session.user, isInitialLoad);
+          isInitialLoad = false;
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
           setLoading(false);
+          isInitialLoad = true; // Reset for next login
         }
       }
     );
 
     return () => subscription.unsubscribe();
-  }, [user]);
+  }, []); // Empty dependency array - only run once on mount
 
   const signIn = async (email: string, password: string): Promise<{ error?: string }> => {
     try {
