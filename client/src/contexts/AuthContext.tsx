@@ -15,7 +15,6 @@ interface AuthContextType {
   supabaseUser: SupabaseUser | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error?: string }>;
-  signUp: (email: string, password: string, firstName?: string, lastName?: string) => Promise<{ error?: string }>;
   signOut: () => Promise<void>;
   getAccessToken: () => Promise<string | null>;
 }
@@ -98,28 +97,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signUp = async (email: string, password: string, firstName?: string, lastName?: string): Promise<{ error?: string }> => {
-    try {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            first_name: firstName,
-            last_name: lastName,
-          },
-        },
-      });
-      
-      if (error) {
-        return { error: error.message };
-      }
-      
-      return {};
-    } catch (error) {
-      return { error: 'An unexpected error occurred' };
-    }
-  };
 
   const signOut = async (): Promise<void> => {
     await supabase.auth.signOut();
@@ -130,7 +107,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     supabaseUser,
     loading,
     signIn,
-    signUp,
     signOut,
     getAccessToken,
   };
