@@ -29,19 +29,40 @@ export async function authenticateToken(req: any, res: Response, next: NextFunct
       return res.status(401).json({ error: 'Invalid token' });
     }
 
-    // Get or create user in our database using storage interface
-    let dbUser = await storage.getUser(data.user.id);
+    // Get or create user in our database using storage interface with timeout
+    const dbOperationTimeout = new Promise<never>((_, reject) => 
+      setTimeout(() => reject(new Error('Database operation timeout')), 8000)
+    );
+
+    let dbUser: any;
+    try {
+      dbUser = await Promise.race([
+        storage.getUser(data.user.id),
+        dbOperationTimeout
+      ]);
+    } catch (dbError) {
+      console.error('Database timeout during user fetch:', dbError);
+      return res.status(503).json({ error: 'Service temporarily unavailable' });
+    }
 
     // Auto-create user if they don't exist using upsert
     if (!dbUser) {
-      dbUser = await storage.upsertUser({
-        id: data.user.id,
-        email: data.user.email || '',
-        firstName: data.user.user_metadata?.first_name || data.user.user_metadata?.name?.split(' ')[0] || '',
-        lastName: data.user.user_metadata?.last_name || data.user.user_metadata?.name?.split(' ').slice(1).join(' ') || '',
-        profileImageUrl: data.user.user_metadata?.avatar_url,
-        role: 'agent' // Default role as requested
-      });
+      try {
+        dbUser = await Promise.race([
+          storage.upsertUser({
+            id: data.user.id,
+            email: data.user.email || '',
+            firstName: data.user.user_metadata?.first_name || data.user.user_metadata?.name?.split(' ')[0] || '',
+            lastName: data.user.user_metadata?.last_name || data.user.user_metadata?.name?.split(' ').slice(1).join(' ') || '',
+            profileImageUrl: data.user.user_metadata?.avatar_url,
+            role: 'agent' // Default role as requested
+          }),
+          dbOperationTimeout
+        ]);
+      } catch (dbError) {
+        console.error('Database timeout during user creation:', dbError);
+        return res.status(503).json({ error: 'Service temporarily unavailable' });
+      }
     }
 
     // Add user info to request

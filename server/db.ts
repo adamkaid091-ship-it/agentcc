@@ -17,11 +17,15 @@ const client = postgres(databaseUrl, {
   ssl: 'require',
   max: 1, // Reduced for serverless environments
   idle_timeout: 20,
-  connect_timeout: 30, // Increased timeout
+  connect_timeout: 10, // Reduced timeout for faster failures
   prepare: false, // Disable prepared statements for pooler compatibility
   connection: {
     application_name: 'atm-service-portal',
-    statement_timeout: 30000, // 30 second statement timeout
+    statement_timeout: 10000, // 10 second statement timeout
+  },
+  onnotice: () => {}, // Suppress notices
+  transform: {
+    undefined: null,
   },
 });
 
