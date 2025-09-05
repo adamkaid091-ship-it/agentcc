@@ -325,7 +325,7 @@ export default function ManagerDashboard() {
                   className="px-2 sm:px-3"
                 >
                   <i className={`fas fa-sync-alt ${submissionsLoading ? 'animate-spin' : ''} ${window.innerWidth >= 640 ? 'mr-1' : ''}`}></i>
-                  <span className="hidden sm:inline">Refresh All</span>
+                  <span className="hidden sm:inline">Refresh</span>
                 </Button>
                 <Link href="/agent">
                   <Button variant="outline" size="sm" data-testid="button-agent-view" className="px-2 sm:px-3">
