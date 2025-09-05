@@ -32,12 +32,12 @@ if (missingVars.length > 0) {
     const postgres = require('postgres');
     const { createClient } = require('@supabase/supabase-js');
     
-    // Database setup using DATABASE_URL for Vercel
-    let databaseUrl = process.env.DATABASE_URL;
+    // Database setup using DATABASE_URL or POSTGRES_URL for Vercel
+    let databaseUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL;
     
     if (!databaseUrl) {
-      console.error('DATABASE_URL not found, API will not work');
-      throw new Error('DATABASE_URL is required for database operations');
+      console.error('DATABASE_URL or POSTGRES_URL not found, API will not work');
+      throw new Error('DATABASE_URL or POSTGRES_URL is required for database operations');
     }
     
     // Add required parameters for Vercel serverless if not present

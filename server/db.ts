@@ -3,12 +3,13 @@ import postgres from 'postgres';
 import * as schema from "@shared/schema";
 
 function getDatabaseUrl(): string {
-  const databaseUrl = process.env.DATABASE_URL;
+  // Check for both DATABASE_URL and POSTGRES_URL (Vercel standard)
+  const databaseUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL;
   
   if (!databaseUrl) {
-    console.error("Environment variables available:", Object.keys(process.env).filter(key => key.includes('DATABASE')));
+    console.error("Environment variables available:", Object.keys(process.env).filter(key => key.includes('DATABASE') || key.includes('POSTGRES')));
     throw new Error(
-      "DATABASE_URL must be set. Please provide your database connection string.",
+      "DATABASE_URL or POSTGRES_URL must be set. Please provide your database connection string.",
     );
   }
   
@@ -31,7 +32,6 @@ function createFreshConnection() {
     idle_timeout: 30, // Longer timeout for Vercel
     connect_timeout: 15, // Longer connect timeout for Vercel
     prepare: false, // CRITICAL: Disable prepared statements for Supabase pooler
-    statement_timeout: 30000, // 30 second statement timeout
     connection: {
       application_name: 'atm-service-portal',
     },
@@ -41,18 +41,16 @@ function createFreshConnection() {
     },
     // Vercel-specific optimizations
     fetch_types: false,
-    publications: [],
-    idle_in_transaction_session_timeout: 10000,
   });
 }
 
 // Always create fresh database connections - no caching
 export const db = new Proxy({} as any, {
-  get(target, prop) {
+  get(target, prop: string | symbol) {
     // Always create a fresh connection and drizzle instance
     const client = createFreshConnection();
     const freshDb = drizzle(client, { schema });
-    return freshDb[prop];
+    return (freshDb as any)[prop];
   }
 });
 
