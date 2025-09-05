@@ -92,7 +92,7 @@ export class DatabaseStorage implements IStorage {
       .leftJoin(users, eq(submissions.agentId, users.id))
       .orderBy(desc(submissions.createdAt));
     
-    return result.map(row => ({
+    return result.map((row: any) => ({
       ...row,
       agentName: row.firstName && row.lastName 
         ? `${row.firstName} ${row.lastName}`.trim()
@@ -115,12 +115,12 @@ export class DatabaseStorage implements IStorage {
     todayCount: number;
   }> {
     const total = await db.select().from(submissions);
-    const feeding = total.filter(s => s.serviceType === 'feeding').length;
-    const maintenance = total.filter(s => s.serviceType === 'maintenance').length;
+    const feeding = total.filter((s: any) => s.serviceType === 'feeding').length;
+    const maintenance = total.filter((s: any) => s.serviceType === 'maintenance').length;
     
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const todayCount = total.filter(s => s.createdAt && s.createdAt >= today).length;
+    const todayCount = total.filter((s: any) => s.createdAt && s.createdAt >= today).length;
 
     return {
       total: total.length,

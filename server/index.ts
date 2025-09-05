@@ -41,14 +41,11 @@ app.use((req, res, next) => {
     console.log("Starting server initialization...");
     console.log("Environment:", process.env.NODE_ENV || 'unknown');
     
-    // Set up DATABASE_URL from Supabase credentials for drizzle.config.ts compatibility
-    if (!process.env.DATABASE_URL && process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      const supabaseUrl = process.env.SUPABASE_URL;
-      const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-      const projectRef = supabaseUrl.replace('https://', '').split('.')[0];
-      const constructedDatabaseUrl = `postgresql://postgres:${supabaseServiceRoleKey}@db.${projectRef}.supabase.co:5432/postgres`;
-      process.env.DATABASE_URL = constructedDatabaseUrl;
-      console.log("DATABASE_URL constructed from Supabase credentials");
+    // Verify DATABASE_URL is available
+    if (process.env.DATABASE_URL) {
+      console.log("DATABASE_URL is available for database operations");
+    } else {
+      console.warn("DATABASE_URL not found - database operations may fail");
     }
     
     const server = await registerRoutes(app);

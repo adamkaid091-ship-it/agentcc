@@ -2,24 +2,26 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from "@shared/schema";
 
-// Use Supabase credentials to construct database connection
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// Lazy database connection initialization
+let _db: any = null;
 
-if (!supabaseUrl || !supabaseServiceRoleKey) {
-  console.error("Environment variables available:", Object.keys(process.env).filter(key => key.includes('SUPABASE')));
-  throw new Error(
-    "SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set. Please provide your Supabase credentials.",
-  );
+function getDatabaseUrl(): string {
+  const databaseUrl = process.env.DATABASE_URL;
+  
+  if (!databaseUrl) {
+    console.error("Environment variables available:", Object.keys(process.env).filter(key => key.includes('DATABASE')));
+    throw new Error(
+      "DATABASE_URL must be set. Please provide your database connection string.",
+    );
+  }
+  
+  return databaseUrl;
 }
-
-// Extract project reference from Supabase URL
-const projectRef = supabaseUrl.replace('https://', '').split('.')[0];
-const databaseUrl = `postgresql://postgres:${supabaseServiceRoleKey}@db.${projectRef}.supabase.co:5432/postgres`;
 
 // Create a new connection for each request to avoid pool hanging
 function createFreshConnection() {
-  return postgres(databaseUrl!, {
+  const databaseUrl = getDatabaseUrl();
+  return postgres(databaseUrl, {
     ssl: 'require',
     max: 1, // Single connection
     idle_timeout: 5,
@@ -38,9 +40,17 @@ function createFreshConnection() {
   });
 }
 
-// Main connection
-const client = createFreshConnection();
-export const db = drizzle(client, { schema });
+// Lazy database connection getter
+export const db = new Proxy({} as any, {
+  get(target, prop) {
+    if (!_db) {
+      console.log("Initializing database connection...");
+      const client = createFreshConnection();
+      _db = drizzle(client, { schema });
+    }
+    return _db[prop];
+  }
+});
 
 // Function to get a fresh database connection when needed
 export function getFreshDb() {
@@ -51,7 +61,8 @@ export function getFreshDb() {
 // Test connection function
 export async function testConnection() {
   try {
-    await client`SELECT 1 as test`;
+    const freshClient = createFreshConnection();
+    await freshClient`SELECT 1 as test`;
     console.log('Database connection test successful');
     return true;
   } catch (error) {
