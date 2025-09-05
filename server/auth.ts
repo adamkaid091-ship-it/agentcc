@@ -4,7 +4,7 @@ import { db } from './db';
 import { users } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 
-export interface AuthenticatedRequest extends Omit<Request, 'user'> {
+export interface AuthenticatedRequest extends Request {
   user?: {
     id: string;
     email: string;
@@ -14,7 +14,7 @@ export interface AuthenticatedRequest extends Omit<Request, 'user'> {
   };
 }
 
-export async function authenticateToken(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+export async function authenticateToken(req: any, res: Response, next: NextFunction) {
   try {
     const authHeader = req.headers.authorization;
     const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
@@ -65,7 +65,7 @@ export async function authenticateToken(req: AuthenticatedRequest, res: Response
   }
 }
 
-export const requireManager = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+export const requireManager = async (req: any, res: Response, next: NextFunction) => {
   if (!req.user) {
     return res.status(401).json({ error: 'Not authenticated' });
   }

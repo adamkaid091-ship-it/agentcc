@@ -83,7 +83,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get current user profile
-  app.get('/api/user/profile', authenticateToken, async (req: AuthenticatedRequest, res) => {
+  app.get('/api/user/profile', authenticateToken, async (req: any, res) => {
     try {
       if (!req.user) {
         return res.status(401).json({ error: 'Not authenticated' });
@@ -96,7 +96,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create submission (authenticated)
-  app.post('/api/submissions', authenticateToken, async (req: AuthenticatedRequest, res) => {
+  app.post('/api/submissions', authenticateToken, async (req: any, res) => {
     try {
       const submissionData = insertSubmissionSchema.parse(req.body);
       
@@ -129,7 +129,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get all submissions (for managers only)
-  app.get('/api/submissions', authenticateToken, requireManager, async (req: AuthenticatedRequest, res) => {
+  app.get('/api/submissions', authenticateToken, requireManager, async (req: any, res) => {
     try {
       const submissions = await storage.getAllSubmissions();
       res.json(submissions);
@@ -144,7 +144,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get current user's submissions
-  app.get('/api/submissions/my', authenticateToken, async (req: AuthenticatedRequest, res) => {
+  app.get('/api/submissions/my', authenticateToken, async (req: any, res) => {
     try {
       if (!req.user) {
         return res.status(401).json({ error: 'Not authenticated' });
@@ -163,7 +163,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get submission stats (managers only)
-  app.get('/api/stats', authenticateToken, requireManager, async (req: AuthenticatedRequest, res) => {
+  app.get('/api/stats', authenticateToken, requireManager, async (req: any, res) => {
     try {
       const stats = await storage.getSubmissionStats();
       const activeAgents = await storage.getActiveAgentsCount();
@@ -269,7 +269,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get current user (authentication test endpoint)
-  app.get('/api/user', authenticateToken, async (req: AuthenticatedRequest, res) => {
+  app.get('/api/user', authenticateToken, async (req: any, res) => {
     try {
       if (!req.user) {
         return res.status(401).json({ error: 'Not authenticated' });
