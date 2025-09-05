@@ -32,80 +32,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const fetchUserProfile = async (supabaseUser: SupabaseUser, isInitialLoad: boolean = false) => {
-    try {
-      console.log('Fetching user profile, isInitialLoad:', isInitialLoad);
-      
-      // Only show loading spinner for initial load, not for token refreshes
-      if (isInitialLoad) {
-        setLoading(true);
-      }
-      
-      const token = await getAccessToken();
-      if (!token) {
-        console.error('No access token available');
-        setUser(null);
-        setLoading(false);
-        return;
-      }
-
-      console.log('Making API request to /api/user/profile...');
-      
-      // Add timeout to the fetch request
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
-      
-      const response = await fetch('/api/user/profile', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        signal: controller.signal
-      });
-      
-      clearTimeout(timeoutId);
-      console.log('API response received:', response.status);
-
-      if (response.ok) {
-        const userData = await response.json();
-        setUser(userData);
-        console.log('User profile loaded successfully:', userData);
-        setLoading(false);
-      } else {
-        console.error('Failed to fetch user profile:', response.status, await response.text());
-        
-        // Create a fallback user object from Supabase user data
-        const fallbackUser = {
-          id: supabaseUser.id,
-          email: supabaseUser.email || '',
-          firstName: supabaseUser.user_metadata?.first_name || '',
-          lastName: supabaseUser.user_metadata?.last_name || '',
-          role: 'agent' as const
-        };
-        
-        console.log('Using fallback user data:', fallbackUser);
-        setUser(fallbackUser);
-        setLoading(false);
-      }
-    } catch (error) {
-      console.error('Error fetching user profile:', error);
-      
-      // Create a fallback user object from Supabase user data if fetch fails
-      if (supabaseUser) {
-        const fallbackUser = {
-          id: supabaseUser.id,
-          email: supabaseUser.email || '',
-          firstName: supabaseUser.user_metadata?.first_name || '',
-          lastName: supabaseUser.user_metadata?.last_name || '',
-          role: 'agent' as const
-        };
-        
-        console.log('API failed, using fallback user data:', fallbackUser);
-        setUser(fallbackUser);
-      } else {
-        setUser(null);
-      }
-      setLoading(false);
-    }
+    console.log('Creating user profile from Supabase data, isInitialLoad:', isInitialLoad);
+    
+    // Bypass API call completely - just use Supabase user data directly
+    const userData = {
+      id: supabaseUser.id,
+      email: supabaseUser.email || '',
+      firstName: supabaseUser.user_metadata?.first_name || supabaseUser.user_metadata?.name?.split(' ')[0] || '',
+      lastName: supabaseUser.user_metadata?.last_name || supabaseUser.user_metadata?.name?.split(' ').slice(1).join(' ') || '',
+      role: 'agent' as const
+    };
+    
+    console.log('Setting user data:', userData);
+    setUser(userData);
+    setLoading(false);
+    console.log('Loading set to false, user should see dashboard now');
   };
 
   useEffect(() => {

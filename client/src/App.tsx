@@ -20,12 +20,23 @@ function ProtectedRouter() {
           <p className="text-sm text-gray-500 mb-2">Loading taking too long?</p>
           <button 
             onClick={() => {
-              console.log('Force clearing session...');
-              signOut();
+              console.log('Force clearing session and reloading...');
+              signOut().then(() => {
+                window.location.reload();
+              });
             }}
-            className="text-sm text-blue-500 hover:text-blue-700 underline"
+            className="text-sm text-blue-500 hover:text-blue-700 underline mr-4"
           >
-            Clear Session & Retry
+            Clear Session & Reload
+          </button>
+          <button 
+            onClick={() => {
+              console.log('Force page reload...');
+              window.location.reload();
+            }}
+            className="text-sm text-red-500 hover:text-red-700 underline"
+          >
+            Force Reload
           </button>
         </div>
       </div>
