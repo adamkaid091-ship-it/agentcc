@@ -139,7 +139,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async (): Promise<void> => {
-    await supabase.auth.signOut();
+    try {
+      console.log('Signing out user...');
+      
+      // Clear user state immediately
+      setUser(null);
+      setSupabaseUser(null);
+      setLoading(false);
+      
+      // Call Supabase signOut
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error('Error during sign out:', error);
+      } else {
+        console.log('Successfully signed out');
+      }
+      
+      // Force a page reload to clear any cached state
+      setTimeout(() => {
+        window.location.reload();
+      }, 100);
+      
+    } catch (error) {
+      console.error('Sign out failed:', error);
+      // Even if sign out fails, clear local state
+      setUser(null);
+      setSupabaseUser(null);
+      setLoading(false);
+      window.location.reload();
+    }
   };
 
   const value: AuthContextType = {
