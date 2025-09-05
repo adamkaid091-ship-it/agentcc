@@ -2,8 +2,8 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from "@shared/schema";
 
-// Check for IPv4-compatible Supabase connection string first
-const databaseUrl = process.env.POSTGRES_URL || process.env.DATABASE_URL;
+// Use Supabase database connection string
+const databaseUrl = process.env.SUPABASE_DB_URL || process.env.POSTGRES_URL || process.env.DATABASE_URL;
 
 if (!databaseUrl) {
   console.error("Environment variables available:", Object.keys(process.env).filter(key => key.includes('DATABASE') || key.includes('POSTGRES')));
