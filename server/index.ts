@@ -46,7 +46,7 @@ app.use((req, res, next) => {
       const supabaseUrl = process.env.SUPABASE_URL;
       const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
       const projectRef = supabaseUrl.replace('https://', '').split('.')[0];
-      const constructedDatabaseUrl = `postgresql://postgres.${projectRef}:${supabaseServiceRoleKey}@aws-0-us-west-1.pooler.supabase.com:5432/postgres`;
+      const constructedDatabaseUrl = `postgresql://postgres:${supabaseServiceRoleKey}@db.${projectRef}.supabase.co:5432/postgres`;
       process.env.DATABASE_URL = constructedDatabaseUrl;
       console.log("DATABASE_URL constructed from Supabase credentials");
     }

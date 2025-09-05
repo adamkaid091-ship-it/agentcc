@@ -15,7 +15,7 @@ if (!supabaseUrl || !supabaseServiceRoleKey) {
 
 // Extract project reference from Supabase URL
 const projectRef = supabaseUrl.replace('https://', '').split('.')[0];
-const databaseUrl = `postgresql://postgres.${projectRef}:${supabaseServiceRoleKey}@aws-0-us-west-1.pooler.supabase.com:5432/postgres`;
+const databaseUrl = `postgresql://postgres:${supabaseServiceRoleKey}@db.${projectRef}.supabase.co:5432/postgres`;
 
 // Create a new connection for each request to avoid pool hanging
 function createFreshConnection() {

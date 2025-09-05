@@ -36,7 +36,7 @@ if (missingVars.length > 0) {
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     const projectRef = supabaseUrl.replace('https://', '').split('.')[0];
-    const databaseUrl = `postgresql://postgres.${projectRef}:${supabaseServiceRoleKey}@aws-0-us-west-1.pooler.supabase.com:5432/postgres`;
+    const databaseUrl = `postgresql://postgres:${supabaseServiceRoleKey}@db.${projectRef}.supabase.co:5432/postgres`;
     
     const client = postgres(databaseUrl, {
       ssl: 'require',
