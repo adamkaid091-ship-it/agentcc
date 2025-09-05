@@ -413,7 +413,7 @@ export default function AgentDashboard() {
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              <ScrollArea className="h-[400px]">
+              <ScrollArea className="h-[350px] sm:h-[400px]">
                 <div className="divide-y divide-border">
                   {(() => {
                     const filtered = submissions.filter(sub => 
@@ -428,7 +428,7 @@ export default function AgentDashboard() {
                       paginatedSubmissions.map((submission: Submission) => (
                         <Dialog key={submission.id}>
                           <DialogTrigger asChild>
-                            <div className="p-4 hover:bg-blue-50 transition-colors cursor-pointer border-l-4 border-transparent hover:border-blue-500" data-testid={`card-submission-${submission.id}`}>
+                            <div className="p-3 sm:p-4 hover:bg-blue-50 transition-colors cursor-pointer border-l-4 border-transparent hover:border-blue-500 touch-manipulation" data-testid={`card-submission-${submission.id}`}>
                               <div className="flex justify-between items-start">
                                 <div className="flex-1">
                                   <h4 className="font-semibold text-gray-800" data-testid={`text-client-${submission.id}`}>
@@ -462,12 +462,12 @@ export default function AgentDashboard() {
                               </div>
                             </div>
                           </DialogTrigger>
-                          <DialogContent className="max-w-md">
+                          <DialogContent className="max-w-md mx-3 sm:mx-0">
                             <DialogHeader>
                               <DialogTitle>Submission Details</DialogTitle>
                             </DialogHeader>
-                            <div className="space-y-4">
-                              <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-3 sm:space-y-4">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                                 <div>
                                   <label className="text-sm font-medium text-gray-600">Client Name</label>
                                   <p className="font-semibold">{submission.clientName}</p>

@@ -159,6 +159,34 @@
     right: 0;
     z-index: 50;
   }
+  
+  /* Ensure touch targets are at least 44px for accessibility */
+  button, input, select, textarea, [role="button"] {
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+  
+  /* Improve text readability on mobile */
+  body {
+    -webkit-text-size-adjust: none;
+    text-size-adjust: none;
+  }
+  
+  /* Optimize scroll performance on mobile */
+  .scroll-area {
+    -webkit-overflow-scrolling: touch;
+    transform: translateZ(0);
+  }
+  
+  /* Better tap highlight for mobile */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* Ensure proper spacing on mobile */
+  .mobile-padding {
+    padding: 0.75rem;
+  }
 }
 
 /* Ensure proper contrast for professional appearance */

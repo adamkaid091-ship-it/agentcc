@@ -645,7 +645,7 @@ export default function ManagerDashboard() {
               <div className="divide-y divide-border">
                 {filteredSubmissions.length > 0 ? (
                   filteredSubmissions.map((submission: any) => (
-                    <div key={submission.id} className="p-4 hover:bg-accent/50 transition-colors" data-testid={`card-mobile-${submission.id}`}>
+                    <div key={submission.id} className="p-3 sm:p-4 hover:bg-accent/50 transition-colors touch-manipulation" data-testid={`card-mobile-${submission.id}`}>
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1">
                           <h4 className="font-semibold text-card-foreground" data-testid={`mobile-client-${submission.id}`}>
@@ -1051,12 +1051,12 @@ export default function ManagerDashboard() {
                                   </div>
                                 </div>
                               </DialogTrigger>
-                              <DialogContent className="max-w-md">
+                              <DialogContent className="max-w-md mx-3 sm:mx-0">
                                 <DialogHeader>
                                   <DialogTitle>Submission Details</DialogTitle>
                                 </DialogHeader>
-                                <div className="space-y-4">
-                                  <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div className="space-y-3 sm:space-y-4">
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-sm">
                                     <div>
                                       <span className="font-medium text-muted-foreground">Client:</span>
                                       <p className="font-semibold">{submission.clientName}</p>
@@ -1110,16 +1110,16 @@ export default function ManagerDashboard() {
           
           {activeView === 'agents' && (
             <div>
-              <h2 className="text-2xl font-bold mb-6">Field Agents</h2>
+              <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Field Agents</h2>
               <Card>
-                <CardContent className="p-12">
+                <CardContent className="p-6 sm:p-12">
                   <div className="text-center">
-                    <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <i className="fas fa-users text-primary text-2xl"></i>
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                      <i className="fas fa-users text-primary text-xl sm:text-2xl"></i>
                     </div>
-                    <h3 className="text-xl font-semibold text-card-foreground mb-2">Coming Soon</h3>
-                    <p className="text-muted-foreground">Agent management features are under development and will be available soon.</p>
-                    <div className="mt-6 flex items-center justify-center text-sm text-muted-foreground">
+                    <h3 className="text-lg sm:text-xl font-semibold text-card-foreground mb-2">Coming Soon</h3>
+                    <p className="text-muted-foreground text-sm sm:text-base">Agent management features are under development and will be available soon.</p>
+                    <div className="mt-4 sm:mt-6 flex items-center justify-center text-sm text-muted-foreground">
                       <div className="w-2 h-2 bg-primary rounded-full animate-pulse mr-2"></div>
                       In development
                     </div>

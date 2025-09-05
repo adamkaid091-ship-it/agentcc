@@ -63,29 +63,30 @@ export default function Landing() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center p-3 sm:p-4">
       <Card className="w-full max-w-md shadow-2xl">
-        <CardHeader className="text-center pb-4">
-          <div className="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-            <i className="fas fa-user-shield text-2xl text-primary"></i>
+        <CardHeader className="text-center pb-3 sm:pb-4 px-4 sm:px-6">
+          <div className="bg-primary/10 w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+            <i className="fas fa-user-shield text-xl sm:text-2xl text-primary"></i>
           </div>
-          <CardTitle className="text-2xl font-bold text-card-foreground mb-2">ATM Service Operations Portal</CardTitle>
-          <p className="text-muted-foreground">Secure login for field operations</p>
+          <CardTitle className="text-xl sm:text-2xl font-bold text-card-foreground mb-2 leading-tight">ATM Service Operations Portal</CardTitle>
+          <p className="text-muted-foreground text-sm sm:text-base">Secure login for field operations</p>
         </CardHeader>
         
-        <CardContent>
+        <CardContent className="px-4 sm:px-6 pb-6">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 sm:space-y-6">
               <FormField
                 control={form.control}
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel className="text-sm font-medium">Email</FormLabel>
                     <FormControl>
                       <Input 
                         type="email" 
                         placeholder="Enter your email" 
+                        className="h-12 sm:h-14 text-base touch-manipulation"
                         {...field} 
                         data-testid="input-email"
                       />
@@ -100,11 +101,12 @@ export default function Landing() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel className="text-sm font-medium">Password</FormLabel>
                     <FormControl>
                       <Input 
                         type="password" 
-                        placeholder="Enter your password" 
+                        placeholder="Enter your password"
+                        className="h-12 sm:h-14 text-base touch-manipulation" 
                         {...field}
                         data-testid="input-password"
                       />
@@ -116,11 +118,15 @@ export default function Landing() {
               
               <Button 
                 type="submit" 
-                className="w-full py-6 text-lg font-medium"
+                className="w-full h-12 sm:h-14 text-base sm:text-lg font-medium touch-manipulation"
                 disabled={isLoading}
                 data-testid="button-login"
               >
-                <i className="fas fa-sign-in-alt mr-2"></i>
+                {isLoading ? (
+                  <i className="fas fa-spinner fa-spin mr-2"></i>
+                ) : (
+                  <i className="fas fa-sign-in-alt mr-2"></i>
+                )}
                 {isLoading ? "Signing in..." : "Sign In"}
               </Button>
             </form>
