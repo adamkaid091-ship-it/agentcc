@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { supabase } from './supabase';
-import { db } from './db';
-import { users } from '@shared/schema';
+import { storage } from './storage';
 import { eq } from 'drizzle-orm';
 
 export interface AuthenticatedRequest extends Request {
@@ -30,23 +29,19 @@ export async function authenticateToken(req: any, res: Response, next: NextFunct
       return res.status(401).json({ error: 'Invalid token' });
     }
 
-    // Get or create user in our database
-    let dbUser = await db.query.users.findFirst({
-      where: eq(users.id, data.user.id)
-    });
+    // Get or create user in our database using storage interface
+    let dbUser = await storage.getUser(data.user.id);
 
-    // Auto-create user if they don't exist
+    // Auto-create user if they don't exist using upsert
     if (!dbUser) {
-      const [newUser] = await db.insert(users).values({
+      dbUser = await storage.upsertUser({
         id: data.user.id,
         email: data.user.email || '',
         firstName: data.user.user_metadata?.first_name || data.user.user_metadata?.name?.split(' ')[0] || '',
         lastName: data.user.user_metadata?.last_name || data.user.user_metadata?.name?.split(' ').slice(1).join(' ') || '',
         profileImageUrl: data.user.user_metadata?.avatar_url,
         role: 'agent' // Default role as requested
-      }).returning();
-      
-      dbUser = newUser;
+      });
     }
 
     // Add user info to request
