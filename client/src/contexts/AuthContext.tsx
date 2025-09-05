@@ -33,60 +33,65 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchUserProfile = async (supabaseUser: SupabaseUser, isInitialLoad: boolean = false) => {
     try {
-      console.log('Fetching user profile from backend database, isInitialLoad:', isInitialLoad);
+      console.log('Creating user profile from Supabase data, isInitialLoad:', isInitialLoad);
       
-      const token = await getAccessToken();
-      if (!token) {
-        console.error('No access token available');
-        setLoading(false);
-        return;
-      }
-
-      // Get user profile from backend database (which includes the correct role)
-      const response = await fetch('/api/user/profile', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch user profile: ${response.status}`);
-      }
-
-      const backendUser = await response.json();
-      console.log('Backend user profile received:', backendUser);
-      
-      // Use the role from the database, not email-based detection
-      const userData = {
-        id: backendUser.id,
-        email: backendUser.email,
-        firstName: backendUser.firstName || '',
-        lastName: backendUser.lastName || '',
-        role: backendUser.role as 'agent' | 'manager' // Use database role
+      // First, set user immediately from Supabase data (for UI to work)
+      const email = supabaseUser.email || '';
+      const tempUserData = {
+        id: supabaseUser.id,
+        email: email,
+        firstName: supabaseUser.user_metadata?.first_name || supabaseUser.user_metadata?.name?.split(' ')[0] || '',
+        lastName: supabaseUser.user_metadata?.last_name || supabaseUser.user_metadata?.name?.split(' ').slice(1).join(' ') || '',
+        role: 'agent' as const // Default to agent initially
       };
       
-      console.log('Setting user data with database role:', userData);
-      setUser(userData);
+      console.log('Setting initial user data:', tempUserData);
+      setUser(tempUserData);
       
-      // Always set loading to false after setting user
+      // Always set loading to false immediately so UI can work
       setLoading(false);
       console.log('Loading set to false, user should see dashboard now');
       
+      // Then, in the background, sync with backend to get the correct role
+      setTimeout(async () => {
+        try {
+          const token = await getAccessToken();
+          if (token) {
+            console.log('Background: Fetching correct role from database...');
+            const response = await fetch('/api/user/profile', {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+              },
+            });
+
+            if (response.ok) {
+              const backendUser = await response.json();
+              console.log('Background: Backend user profile received:', backendUser);
+              
+              // Update user with correct role from database
+              const updatedUserData = {
+                id: backendUser.id,
+                email: backendUser.email,
+                firstName: backendUser.firstName || tempUserData.firstName,
+                lastName: backendUser.lastName || tempUserData.lastName,
+                role: backendUser.role as 'agent' | 'manager'
+              };
+              
+              console.log('Background: Updating user with database role:', updatedUserData);
+              setUser(updatedUserData);
+            } else {
+              console.log('Background: Failed to fetch from backend, keeping initial role');
+            }
+          }
+        } catch (error) {
+          console.log('Background: Backend sync failed, keeping initial role:', error);
+        }
+      }, 100); // Small delay to let UI load first
+      
     } catch (error) {
       console.error('Error in fetchUserProfile:', error);
-      // Fallback: if backend fails, still create user but with agent role for safety
-      const email = supabaseUser.email || '';
-      const fallbackUser = {
-        id: supabaseUser.id,
-        email: email,
-        firstName: supabaseUser.user_metadata?.first_name || '',
-        lastName: supabaseUser.user_metadata?.last_name || '',
-        role: 'agent' as const // Default to agent if backend fails
-      };
-      console.log('Using fallback user data (agent role):', fallbackUser);
-      setUser(fallbackUser);
-      setLoading(false);
+      setLoading(false); // Always clear loading even on error
     }
   };
 
