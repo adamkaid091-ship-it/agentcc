@@ -2,9 +2,6 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from "@shared/schema";
 
-// Lazy database connection initialization
-let _db: any = null;
-
 function getDatabaseUrl(): string {
   const databaseUrl = process.env.DATABASE_URL;
   
@@ -18,37 +15,32 @@ function getDatabaseUrl(): string {
   return databaseUrl;
 }
 
-// Create a new connection for each request to avoid pool hanging
+// Create a fresh connection with better settings for Supabase pooler
 function createFreshConnection() {
   const databaseUrl = getDatabaseUrl();
   return postgres(databaseUrl, {
     ssl: 'require',
-    max: 1, // Single connection
-    idle_timeout: 5,
-    connect_timeout: 2,
-    prepare: false, // Disable prepared statements for pooler compatibility
+    max: 1, // Single connection for pooler
+    idle_timeout: 20, // Longer idle timeout
+    connect_timeout: 10, // Longer connect timeout
+    prepare: false, // Required for pooler compatibility
     connection: {
       application_name: 'atm-service-portal',
-      statement_timeout: 2000, // 2 second timeout
     },
     onnotice: () => {}, // Suppress notices
     transform: {
       undefined: null,
     },
-    // Auto-end connection after use
-    max_lifetime: 30, // 30 seconds max lifetime
   });
 }
 
-// Lazy database connection getter
+// Always create fresh database connections - no caching
 export const db = new Proxy({} as any, {
   get(target, prop) {
-    if (!_db) {
-      console.log("Initializing database connection...");
-      const client = createFreshConnection();
-      _db = drizzle(client, { schema });
-    }
-    return _db[prop];
+    // Always create a fresh connection and drizzle instance
+    const client = createFreshConnection();
+    const freshDb = drizzle(client, { schema });
+    return freshDb[prop];
   }
 });
 

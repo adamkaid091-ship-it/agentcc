@@ -39,14 +39,14 @@ export class DatabaseStorage implements IStorage {
       const [user] = await db.select().from(users).where(eq(users.id, id));
       return user;
     } catch (error) {
-      console.warn('Primary DB connection failed for getUser, trying fresh connection:', error);
+      console.warn('Database connection failed for getUser, retrying:', error);
+      // Since db always creates fresh connections now, just retry once
       try {
-        const freshDb = getFreshDb();
-        const [user] = await freshDb.select().from(users).where(eq(users.id, id));
+        const [user] = await db.select().from(users).where(eq(users.id, id));
         return user;
-      } catch (freshError) {
-        console.error('Fresh DB connection also failed for getUser:', freshError);
-        throw freshError;
+      } catch (retryError) {
+        console.error('Retry also failed for getUser:', retryError);
+        throw retryError;
       }
     }
   }
