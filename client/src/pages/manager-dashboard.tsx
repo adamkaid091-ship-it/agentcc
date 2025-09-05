@@ -1143,19 +1143,43 @@ export default function ManagerDashboard() {
       {/* Mobile Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 md:hidden bg-card border-t border-border z-50">
         <div className="grid grid-cols-4 py-2">
-          <button className="flex flex-col items-center py-2 text-primary" data-testid="mobile-nav-dashboard">
+          <button 
+            onClick={() => setActiveView("dashboard")}
+            className={`flex flex-col items-center py-2 ${
+              activeView === 'dashboard' ? 'text-primary' : 'text-muted-foreground'
+            }`} 
+            data-testid="mobile-nav-dashboard"
+          >
             <i className="fas fa-chart-line text-lg mb-1"></i>
             <span className="text-xs">Dashboard</span>
           </button>
-          <button className="flex flex-col items-center py-2 text-muted-foreground" data-testid="mobile-nav-data">
+          <button 
+            onClick={() => setActiveView("submissions")}
+            className={`flex flex-col items-center py-2 ${
+              activeView === 'submissions' ? 'text-primary' : 'text-muted-foreground'
+            }`} 
+            data-testid="mobile-nav-data"
+          >
             <i className="fas fa-database text-lg mb-1"></i>
             <span className="text-xs">Data</span>
           </button>
-          <button className="flex flex-col items-center py-2 text-muted-foreground" data-testid="mobile-nav-agents">
+          <button 
+            onClick={() => setActiveView("agents")}
+            className={`flex flex-col items-center py-2 ${
+              activeView === 'agents' ? 'text-primary' : 'text-muted-foreground'
+            }`} 
+            data-testid="mobile-nav-agents"
+          >
             <i className="fas fa-users text-lg mb-1"></i>
             <span className="text-xs">Agents</span>
           </button>
-          <button className="flex flex-col items-center py-2 text-muted-foreground" data-testid="mobile-nav-reports">
+          <button 
+            onClick={() => setActiveView("reports")}
+            className={`flex flex-col items-center py-2 ${
+              activeView === 'reports' ? 'text-primary' : 'text-muted-foreground'
+            }`} 
+            data-testid="mobile-nav-reports"
+          >
             <i className="fas fa-file-export text-lg mb-1"></i>
             <span className="text-xs">Reports</span>
           </button>
