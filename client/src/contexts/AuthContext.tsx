@@ -7,7 +7,7 @@ interface User {
   email: string;
   firstName?: string;
   lastName?: string;
-  role: 'agent' | 'manager' | 'admin';
+  role: 'agent' | 'manager';
 }
 
 interface AuthContextType {
@@ -75,7 +75,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 email: backendUser.email,
                 firstName: backendUser.firstName || tempUserData.firstName,
                 lastName: backendUser.lastName || tempUserData.lastName,
-                role: backendUser.role as 'agent' | 'manager' | 'admin'
+                role: backendUser.role as 'agent' | 'manager'
               };
               
               console.log('Background: Updating user with database role:', updatedUserData);

@@ -49,9 +49,9 @@ function ProtectedRouter() {
 
   return (
     <Switch>
-      <Route path="/" component={user.role === 'manager' || user.role === 'admin' ? ManagerDashboard : AgentDashboard} />
+      <Route path="/" component={user.role === 'manager' ? ManagerDashboard : AgentDashboard} />
       <Route path="/agent" component={AgentDashboard} />
-      <Route path="/manager" component={user.role === 'manager' || user.role === 'admin' ? ManagerDashboard : AgentDashboard} />
+      <Route path="/manager" component={user.role === 'manager' ? ManagerDashboard : AgentDashboard} />
       <Route component={NotFound} />
     </Switch>
   );

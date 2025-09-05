@@ -41,7 +41,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           first_name VARCHAR,
           last_name VARCHAR,
           profile_image_url VARCHAR,
-          role VARCHAR DEFAULT 'agent' CHECK (role IN ('agent', 'manager', 'admin')),
+          role VARCHAR DEFAULT 'agent' CHECK (role IN ('agent', 'manager')),
           created_at TIMESTAMP DEFAULT NOW(),
           updated_at TIMESTAMP DEFAULT NOW()
         )
@@ -211,7 +211,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           email: authUser.user.email || email,
           firstName: firstName || '',
           lastName: lastName || '',
-          role: role as 'agent' | 'manager' | 'admin'
+          role: role as 'agent' | 'manager'
         });
       }
       
@@ -241,8 +241,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Email and role are required' });
       }
       
-      if (!['agent', 'manager', 'admin'].includes(role)) {
-        return res.status(400).json({ error: 'Invalid role. Must be agent, manager, or admin' });
+      if (!['agent', 'manager'].includes(role)) {
+        return res.status(400).json({ error: 'Invalid role. Must be agent or manager' });
       }
       
       // Update user role in database
