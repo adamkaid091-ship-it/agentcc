@@ -31,9 +31,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return data.session?.access_token || null;
   };
 
-  const fetchUserProfile = async (supabaseUser: SupabaseUser) => {
+  const fetchUserProfile = async (supabaseUser: SupabaseUser, isInitialLoad: boolean = false) => {
     try {
-      setLoading(true);
+      // Only show loading spinner for initial load, not for token refreshes
+      if (isInitialLoad) {
+        setLoading(true);
+      }
+      
       const token = await getAccessToken();
       if (!token) {
         console.error('No access token available');
@@ -61,7 +65,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error('Error fetching user profile:', error);
       setUser(null);
     } finally {
-      setLoading(false);
+      // Only set loading to false for initial loads
+      if (isInitialLoad) {
+        setLoading(false);
+      }
     }
   };
 
@@ -71,7 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('Initial session:', session?.user ? 'User found' : 'No user');
       setSupabaseUser(session?.user ?? null);
       if (session?.user) {
-        fetchUserProfile(session.user);
+        fetchUserProfile(session.user, true); // Initial load
       } else {
         setLoading(false);
       }
@@ -87,7 +94,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSupabaseUser(session?.user ?? null);
         
         if (event === 'SIGNED_IN' && session?.user) {
-          await fetchUserProfile(session.user);
+          // Check if this is truly a new sign-in or just a token refresh
+          if (!user) {
+            // This is a new sign-in, show loading
+            await fetchUserProfile(session.user, true);
+          } else {
+            // This is likely a token refresh, don't show loading
+            await fetchUserProfile(session.user, false);
+          }
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
           setLoading(false);
@@ -96,7 +110,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     );
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [user]);
 
   const signIn = async (email: string, password: string): Promise<{ error?: string }> => {
     try {
