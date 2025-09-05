@@ -72,7 +72,8 @@ export class DatabaseStorage implements IStorage {
         serviceType: submissions.serviceType,
         agentId: submissions.agentId,
         createdAt: submissions.createdAt,
-        agentName: users.firstName,
+        firstName: users.firstName,
+        lastName: users.lastName,
       })
       .from(submissions)
       .leftJoin(users, eq(submissions.agentId, users.id))
@@ -80,7 +81,9 @@ export class DatabaseStorage implements IStorage {
     
     return result.map(row => ({
       ...row,
-      agentName: row.agentName || 'Unknown Agent'
+      agentName: row.firstName && row.lastName 
+        ? `${row.firstName} ${row.lastName}`.trim()
+        : row.firstName || row.lastName || 'Unknown Agent'
     }));
   }
 

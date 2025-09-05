@@ -542,6 +542,7 @@ export default function ManagerDashboard() {
                     <TableHead>Type</TableHead>
                     <TableHead>Agent</TableHead>
                     <TableHead>Timestamp</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -576,11 +577,72 @@ export default function ManagerDashboard() {
                         <TableCell data-testid={`cell-timestamp-${submission.id}`}>
                           {submission.createdAt ? new Date(submission.createdAt).toLocaleString() : 'N/A'}
                         </TableCell>
+                        <TableCell>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => setSelectedSubmission(submission)}
+                                data-testid={`button-view-details-${submission.id}`}
+                              >
+                                <i className="fas fa-eye mr-1"></i>
+                                View Details
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-md">
+                              <DialogHeader>
+                                <DialogTitle>Submission Details</DialogTitle>
+                              </DialogHeader>
+                              <div className="space-y-4">
+                                <div>
+                                  <label className="text-sm font-medium text-muted-foreground">Client Name</label>
+                                  <p className="text-sm font-mono">{submission.clientName}</p>
+                                </div>
+                                <div>
+                                  <label className="text-sm font-medium text-muted-foreground">Governorate</label>
+                                  <p className="text-sm">{submission.government}</p>
+                                </div>
+                                <div>
+                                  <label className="text-sm font-medium text-muted-foreground">ATM Code</label>
+                                  <p className="text-sm font-mono">{submission.atmCode}</p>
+                                </div>
+                                <div>
+                                  <label className="text-sm font-medium text-muted-foreground">Service Type</label>
+                                  <p className="text-sm" dir="rtl">
+                                    {submission.serviceType === 'feeding' ? 'تغذية (Feeding)' : 'صيانة (Maintenance)'}
+                                  </p>
+                                </div>
+                                <div>
+                                  <label className="text-sm font-medium text-muted-foreground">Agent</label>
+                                  <p className="text-sm">{submission.agentName || 'Unknown'}</p>
+                                </div>
+                                <div>
+                                  <label className="text-sm font-medium text-muted-foreground">Submission Time</label>
+                                  <p className="text-sm">
+                                    {submission.createdAt ? new Date(submission.createdAt).toLocaleString('en-US', {
+                                      weekday: 'long',
+                                      year: 'numeric',
+                                      month: 'long',
+                                      day: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    }) : 'N/A'}
+                                  </p>
+                                </div>
+                                <div>
+                                  <label className="text-sm font-medium text-muted-foreground">Submission ID</label>
+                                  <p className="text-xs font-mono text-muted-foreground">{submission.id}</p>
+                                </div>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                        </TableCell>
                       </TableRow>
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground" data-testid="text-no-submissions">
+                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground" data-testid="text-no-submissions">
                         No submissions found
                       </TableCell>
                     </TableRow>
@@ -630,9 +692,70 @@ export default function ManagerDashboard() {
                           </span>
                         </div>
                       </div>
-                      <div className="mt-3 text-xs text-muted-foreground" data-testid={`mobile-time-${submission.id}`}>
-                        <i className="fas fa-clock mr-1"></i>
-                        {submission.createdAt ? new Date(submission.createdAt).toLocaleString() : 'N/A'}
+                      <div className="flex items-center justify-between mt-3">
+                        <div className="text-xs text-muted-foreground" data-testid={`mobile-time-${submission.id}`}>
+                          <i className="fas fa-clock mr-1"></i>
+                          {submission.createdAt ? new Date(submission.createdAt).toLocaleString() : 'N/A'}
+                        </div>
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => setSelectedSubmission(submission)}
+                              data-testid={`button-mobile-view-details-${submission.id}`}
+                            >
+                              <i className="fas fa-eye mr-1"></i>
+                              Details
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-md">
+                            <DialogHeader>
+                              <DialogTitle>Submission Details</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4">
+                              <div>
+                                <label className="text-sm font-medium text-muted-foreground">Client Name</label>
+                                <p className="text-sm font-mono">{submission.clientName}</p>
+                              </div>
+                              <div>
+                                <label className="text-sm font-medium text-muted-foreground">Governorate</label>
+                                <p className="text-sm">{submission.government}</p>
+                              </div>
+                              <div>
+                                <label className="text-sm font-medium text-muted-foreground">ATM Code</label>
+                                <p className="text-sm font-mono">{submission.atmCode}</p>
+                              </div>
+                              <div>
+                                <label className="text-sm font-medium text-muted-foreground">Service Type</label>
+                                <p className="text-sm" dir="rtl">
+                                  {submission.serviceType === 'feeding' ? 'تغذية (Feeding)' : 'صيانة (Maintenance)'}
+                                </p>
+                              </div>
+                              <div>
+                                <label className="text-sm font-medium text-muted-foreground">Agent</label>
+                                <p className="text-sm">{submission.agentName || 'Unknown'}</p>
+                              </div>
+                              <div>
+                                <label className="text-sm font-medium text-muted-foreground">Submission Time</label>
+                                <p className="text-sm">
+                                  {submission.createdAt ? new Date(submission.createdAt).toLocaleString('en-US', {
+                                    weekday: 'long',
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  }) : 'N/A'}
+                                </p>
+                              </div>
+                              <div>
+                                <label className="text-sm font-medium text-muted-foreground">Submission ID</label>
+                                <p className="text-xs font-mono text-muted-foreground">{submission.id}</p>
+                              </div>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
                       </div>
                     </div>
                   ))
