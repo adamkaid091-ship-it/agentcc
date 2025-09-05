@@ -95,10 +95,8 @@ export default function ManagerDashboard() {
   };
 
   useEffect(() => {
-    const role = localStorage.getItem('userRole');
-    setUserRole(role);
     // Only managers should access this dashboard
-    if (role !== 'manager') {
+    if (user && user.role !== 'manager') {
       toast({
         title: "Access Denied",
         description: "You need manager permissions to access this page",
@@ -106,13 +104,13 @@ export default function ManagerDashboard() {
       });
       setLocation('/agent');
     }
-  }, [toast, setLocation]);
+  }, [user, toast, setLocation]);
 
   // Connected to real Supabase database via API
 
-  const handleLogout = () => {
-    localStorage.removeItem('userRole');
-    window.location.href = '/';
+  const handleLogout = async () => {
+    await signOut();
+    // Navigation will be handled by AuthContext
   };
 
   const filteredSubmissions = Array.isArray(submissions) ? submissions.filter((submission: any) => {
