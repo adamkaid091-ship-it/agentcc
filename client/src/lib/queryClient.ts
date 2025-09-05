@@ -1,4 +1,5 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
+import { supabase } from "./supabase";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -80,10 +81,19 @@ export const getQueryFn: <T>(options: {
     return await res.json();
   };
 
+// Function to get access token from Supabase
+const getAccessToken = async (): Promise<string | null> => {
+  const { data } = await supabase.auth.getSession();
+  return data.session?.access_token || null;
+};
+
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      queryFn: getQueryFn({ on401: "throw" }),
+      queryFn: getQueryFn({ 
+        on401: "throw",
+        getToken: getAccessToken
+      }),
       refetchInterval: false,
       refetchOnWindowFocus: true,
       staleTime: 0, // Always fetch fresh data
