@@ -5,6 +5,7 @@ import { sql } from "drizzle-orm";
 import { storage } from "./storage";
 import { insertSubmissionSchema } from "@shared/schema";
 import { z } from "zod";
+import { authenticateToken, requireManager, type AuthenticatedRequest } from "./auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Simple health check route
@@ -80,15 +81,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Create submission
-  app.post('/api/submissions', async (req, res) => {
+  // Get current user profile
+  app.get('/api/user/profile', authenticateToken, async (req, res) => {
+    const authReq = req as AuthenticatedRequest;
+    try {
+      if (!authReq.user) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+      res.json(authReq.user);
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+      res.status(500).json({ error: 'Failed to fetch user profile' });
+    }
+  });
+
+  // Create submission (authenticated)
+  app.post('/api/submissions', authenticateToken, async (req, res) => {
+    const authReq = req as AuthenticatedRequest;
     try {
       const submissionData = insertSubmissionSchema.parse(req.body);
-      const agentId = 'demo-agent'; // TODO: Replace with actual user ID from session
+      
+      if (!authReq.user) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
       
       const submission = await storage.createSubmission({
         ...submissionData,
-        agentId
+        agentId: authReq.user.id
       });
       
       res.json(submission);
@@ -110,8 +129,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get all submissions (for managers)
-  app.get('/api/submissions', async (req, res) => {
+  // Get all submissions (for managers only)
+  app.get('/api/submissions', authenticateToken, requireManager, async (req, res) => {
     try {
       const submissions = await storage.getAllSubmissions();
       res.json(submissions);
@@ -125,24 +144,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get agent submissions
-  app.get('/api/submissions/agent/:agentId', async (req, res) => {
+  // Get current user's submissions
+  app.get('/api/submissions/my', authenticateToken, async (req, res) => {
+    const authReq = req as AuthenticatedRequest;
     try {
-      const { agentId } = req.params;
-      const submissions = await storage.getSubmissionsByAgent(agentId);
+      if (!authReq.user) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+      
+      const submissions = await storage.getSubmissionsByAgent(authReq.user.id);
       res.json(submissions);
     } catch (error) {
-      console.error("Error fetching agent submissions:", error);
+      console.error("Error fetching user submissions:", error);
       res.status(500).json({ 
         status: 'error', 
-        message: 'Failed to fetch agent submissions',
+        message: 'Failed to fetch user submissions',
         error: error instanceof Error ? error.message : 'Unknown error'
       });
     }
   });
 
-  // Get submission stats
-  app.get('/api/stats', async (req, res) => {
+  // Get submission stats (managers only)
+  app.get('/api/stats', authenticateToken, requireManager, async (req, res) => {
     try {
       const stats = await storage.getSubmissionStats();
       const activeAgents = await storage.getActiveAgentsCount();

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -13,21 +14,32 @@ import type { Submission } from "@shared/schema";
 
 export default function ManagerDashboard() {
   const { toast } = useToast();
+  const { user, signOut, getAccessToken } = useAuth();
   const [, setLocation] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   const [governmentFilter, setGovernmentFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState("all");
   const [activeView, setActiveView] = useState("dashboard");
-  const [userRole, setUserRole] = useState<string | null>(null);
   const [selectedSubmission, setSelectedSubmission] = useState<(Submission & { agentName: string }) | null>(null);
 
-  // Fetch real submissions data from API
+  // Fetch real submissions data from API (manager only)
   const { data: submissions = [], isLoading: submissionsLoading } = useQuery<(Submission & { agentName: string })[]>({
     queryKey: ['/api/submissions'],
+    queryFn: async () => {
+      const token = await getAccessToken();
+      const response = await fetch('/api/submissions', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) throw new Error('Failed to fetch submissions');
+      return response.json();
+    },
+    enabled: user?.role === 'manager',
   });
 
-  // Fetch real statistics data from API
+  // Fetch real statistics data from API (manager only)
   const { data: stats = { total: 0, feeding: 0, maintenance: 0, todayCount: 0, activeAgents: 0 } } = useQuery<{
     total: number;
     feeding: number;
@@ -36,6 +48,17 @@ export default function ManagerDashboard() {
     activeAgents: number;
   }>({
     queryKey: ['/api/stats'],
+    queryFn: async () => {
+      const token = await getAccessToken();
+      const response = await fetch('/api/stats', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) throw new Error('Failed to fetch stats');
+      return response.json();
+    },
+    enabled: user?.role === 'manager',
   });
 
   const exportData = (format: 'csv' | 'excel' | 'txt') => {

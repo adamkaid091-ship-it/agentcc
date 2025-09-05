@@ -1,0 +1,151 @@
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { User as SupabaseUser } from '@supabase/supabase-js';
+
+interface User {
+  id: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  role: 'agent' | 'manager';
+}
+
+interface AuthContextType {
+  user: User | null;
+  supabaseUser: SupabaseUser | null;
+  loading: boolean;
+  signIn: (email: string, password: string) => Promise<{ error?: string }>;
+  signUp: (email: string, password: string, firstName?: string, lastName?: string) => Promise<{ error?: string }>;
+  signOut: () => Promise<void>;
+  getAccessToken: () => Promise<string | null>;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [supabaseUser, setSupabaseUser] = useState<SupabaseUser | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const getAccessToken = async (): Promise<string | null> => {
+    const { data } = await supabase.auth.getSession();
+    return data.session?.access_token || null;
+  };
+
+  const fetchUserProfile = async (supabaseUser: SupabaseUser) => {
+    try {
+      const token = await getAccessToken();
+      if (!token) return;
+
+      const response = await fetch('/api/user/profile', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const userData = await response.json();
+        setUser(userData);
+      }
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+    }
+  };
+
+  useEffect(() => {
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSupabaseUser(session?.user ?? null);
+      if (session?.user) {
+        fetchUserProfile(session.user);
+      } else {
+        setLoading(false);
+      }
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        setSupabaseUser(session?.user ?? null);
+        
+        if (session?.user) {
+          await fetchUserProfile(session.user);
+        } else {
+          setUser(null);
+        }
+        setLoading(false);
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const signIn = async (email: string, password: string): Promise<{ error?: string }> => {
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      if (error) {
+        return { error: error.message };
+      }
+      
+      return {};
+    } catch (error) {
+      return { error: 'An unexpected error occurred' };
+    }
+  };
+
+  const signUp = async (email: string, password: string, firstName?: string, lastName?: string): Promise<{ error?: string }> => {
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            first_name: firstName,
+            last_name: lastName,
+          },
+        },
+      });
+      
+      if (error) {
+        return { error: error.message };
+      }
+      
+      return {};
+    } catch (error) {
+      return { error: 'An unexpected error occurred' };
+    }
+  };
+
+  const signOut = async (): Promise<void> => {
+    await supabase.auth.signOut();
+  };
+
+  const value: AuthContextType = {
+    user,
+    supabaseUser,
+    loading,
+    signIn,
+    signUp,
+    signOut,
+    getAccessToken,
+  };
+
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+}

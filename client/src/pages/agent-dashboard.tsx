@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import { insertSubmissionSchema, type InsertSubmission, type Submission } from "@shared/schema";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -20,16 +21,12 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 export default function AgentDashboard() {
   const { toast } = useToast();
+  const { user, signOut, getAccessToken } = useAuth();
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [userRole, setUserRole] = useState<string | null>(null);
   const [submissionsSearch, setSubmissionsSearch] = useState("");
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
-
-  useEffect(() => {
-    setUserRole(localStorage.getItem('userRole'));
-  }, []);
 
   // Update timestamp every second
   useEffect(() => {
@@ -51,19 +48,30 @@ export default function AgentDashboard() {
 
   const queryClient = useQueryClient();
 
-  // Fetch agent's submissions
+  // Fetch current user's submissions
   const { data: submissions = [], isLoading } = useQuery<Submission[]>({
-    queryKey: ['/api/submissions/agent/demo-agent'],
+    queryKey: ['/api/submissions/my'],
+    queryFn: async () => {
+      const token = await getAccessToken();
+      const response = await fetch('/api/submissions/my', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) throw new Error('Failed to fetch submissions');
+      return response.json();
+    },
   });
 
   // Create submission mutation
   const createSubmissionMutation = useMutation({
     mutationFn: async (data: InsertSubmission) => {
-      const response = await apiRequest('POST', '/api/submissions', data);
+      const token = await getAccessToken();
+      const response = await apiRequest('POST', '/api/submissions', data, token);
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/submissions/agent/demo-agent'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/submissions/my'] });
       queryClient.invalidateQueries({ queryKey: ['/api/submissions'] });
       queryClient.invalidateQueries({ queryKey: ['/api/stats'] });
       toast({
@@ -86,9 +94,12 @@ export default function AgentDashboard() {
     createSubmissionMutation.mutate(data);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('userRole');
-    window.location.href = '/';
+  const handleSignOut = async () => {
+    await signOut();
+    toast({
+      title: "Logged Out",
+      description: "You have been logged out successfully!",
+    });
   };
 
 
@@ -103,13 +114,13 @@ export default function AgentDashboard() {
             </div>
             <div>
               <h1 className="font-bold text-white text-lg" data-testid="text-agent-name">
-                Field Agent Dashboard
+                {user?.firstName || 'Field Agent'} - {user?.role === 'manager' ? 'Manager' : 'Agent'}
               </h1>
-              <p className="text-xs text-blue-100">Submit service reports</p>
+              <p className="text-xs text-blue-100">{user?.email}</p>
             </div>
           </div>
           <div className="flex items-center space-x-2">
-            {userRole === 'manager' && (
+            {user?.role === 'manager' && (
               <Link href="/manager">
                 <Button variant="secondary" size="sm" className="bg-white/20 backdrop-blur hover:bg-white/30 text-white border-white/30" data-testid="button-manager-panel">
                   <i className="fas fa-cogs mr-1"></i>
@@ -117,7 +128,7 @@ export default function AgentDashboard() {
                 </Button>
               </Link>
             )}
-            <Button variant="ghost" size="sm" onClick={handleLogout} className="text-white hover:bg-white/20" data-testid="button-logout">
+            <Button variant="ghost" size="sm" onClick={handleSignOut} className="text-white hover:bg-white/20" data-testid="button-logout">
               <i className="fas fa-sign-out-alt"></i>
             </Button>
           </div>
@@ -353,7 +364,7 @@ export default function AgentDashboard() {
                     const paginatedSubmissions = filtered.slice(startIndex, startIndex + itemsPerPage);
                     
                     return paginatedSubmissions.length > 0 ? (
-                      paginatedSubmissions.map((submission: DemoSubmission) => (
+                      paginatedSubmissions.map((submission: Submission) => (
                         <Dialog key={submission.id}>
                           <DialogTrigger asChild>
                             <div className="p-4 hover:bg-blue-50 transition-colors cursor-pointer border-l-4 border-transparent hover:border-blue-500" data-testid={`card-submission-${submission.id}`}>
