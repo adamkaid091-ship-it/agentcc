@@ -1,15 +1,15 @@
 {
-  "buildCommand": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
+  "buildCommand": "vite build",
   "outputDirectory": "dist/public",
   "functions": {
-    "dist/index.js": {
+    "api/**/*.js": {
       "maxDuration": 60
     }
   },
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "/dist/index.js"
+      "destination": "/api/index.js"
     }
   ]
 }
