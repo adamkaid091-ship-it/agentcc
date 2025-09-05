@@ -1,44 +1,28 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, EyeOff, LogIn } from 'lucide-react';
+import { LogIn } from 'lucide-react';
 
 export function LoginForm() {
-  const { signIn, loading } = useAuth();
+  const { loading } = useAuth();
   const { toast } = useToast();
-  
-  const [signInData, setSignInData] = useState({
-    email: '',
-    password: '',
-  });
-  
-  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSignIn = async () => {
     setIsLoading(true);
-
-    const { error } = await signIn(signInData.email, signInData.password);
-    
-    if (error) {
+    try {
+      // Redirect to Replit Auth login endpoint
+      window.location.href = '/api/login';
+    } catch (error) {
       toast({
-        title: "Login Failed",
-        description: error,
+        title: "Login Error",
+        description: "Unable to initiate login. Please try again.",
         variant: "destructive",
       });
-    } else {
-      toast({
-        title: "Welcome Back!",
-        description: "You have been successfully logged in.",
-      });
+      setIsLoading(false);
     }
-    
-    setIsLoading(false);
   };
 
 
@@ -65,51 +49,12 @@ export function LoginForm() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <form onSubmit={handleSignIn} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium">Email Address</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="Enter your email address"
-                value={signInData.email}
-                onChange={(e) => setSignInData({ ...signInData, email: e.target.value })}
-                required
-                className="h-11"
-                data-testid="input-signin-email"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm font-medium">Password</Label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password"
-                  value={signInData.password}
-                  onChange={(e) => setSignInData({ ...signInData, password: e.target.value })}
-                  required
-                  className="h-11 pr-10"
-                  data-testid="input-signin-password"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-0 top-0 h-11 w-11 hover:bg-transparent"
-                  onClick={() => setShowPassword(!showPassword)}
-                  data-testid="button-toggle-password"
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4 text-gray-500" />
-                  ) : (
-                    <Eye className="h-4 w-4 text-gray-500" />
-                  )}
-                </Button>
-              </div>
-            </div>
+          <div className="space-y-4">
+            <p className="text-center text-gray-600 dark:text-gray-400">
+              Sign in with your Replit account to access the Field Agent System
+            </p>
             <Button 
-              type="submit" 
+              onClick={handleSignIn} 
               className="w-full h-11 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium" 
               disabled={isLoading}
               data-testid="button-signin-submit"
@@ -117,16 +62,16 @@ export function LoginForm() {
               {isLoading ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
-                  Signing in...
+                  Redirecting...
                 </>
               ) : (
                 <>
                   <LogIn className="mr-2 h-4 w-4" />
-                  Sign In
+                  Sign in with Replit
                 </>
               )}
             </Button>
-          </form>
+          </div>
         </CardContent>
       </Card>
     </div>

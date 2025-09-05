@@ -5,8 +5,39 @@ import { sql } from "drizzle-orm";
 import { storage } from "./storage";
 import { insertSubmissionSchema } from "@shared/schema";
 import { z } from "zod";
-import { authenticateToken, requireManager, type AuthenticatedRequest } from "./auth";
-import { supabaseAdmin } from "./supabase";
+import { isAuthenticated } from "./replitAuth";
+import type { Request, Response, NextFunction } from "express";
+
+// Define the authenticated request type for Replit Auth
+interface AuthenticatedRequest extends Request {
+  user?: {
+    id: string;
+    email: string;
+    firstName?: string;
+    lastName?: string;
+    role: 'agent' | 'manager';
+  };
+}
+
+// Middleware to require manager role
+const requireManager = async (req: Request, res: Response, next: NextFunction) => {
+  // Get user data from session/passport user object
+  const sessionUser = (req as any).user;
+  if (!sessionUser || !sessionUser.claims) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+  
+  // For now, assume all authenticated users are agents
+  // You can implement role assignment logic based on email domain or other criteria
+  const claims = sessionUser.claims;
+  const userRole = claims.email?.includes('@manager.') ? 'manager' : 'agent';
+  
+  if (userRole !== 'manager') {
+    return res.status(403).json({ error: 'Manager role required' });
+  }
+  
+  next();
+};
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Simple health check route
@@ -83,13 +114,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get current user profile
-  app.get('/api/user/profile', authenticateToken, async (req, res) => {
+  app.get('/api/user/profile', isAuthenticated, async (req, res) => {
     const authReq = req as AuthenticatedRequest;
     try {
-      if (!authReq.user) {
+      // Get user data from session/passport user object
+      const sessionUser = (req as any).user;
+      if (!sessionUser || !sessionUser.claims) {
         return res.status(401).json({ error: 'Not authenticated' });
       }
-      res.json(authReq.user);
+      
+      // Extract user info from Replit OAuth claims
+      const claims = sessionUser.claims;
+      const userData = {
+        id: claims.sub,
+        email: claims.email,
+        firstName: claims.first_name,
+        lastName: claims.last_name,
+        role: 'agent' as const // Default role, you can implement role assignment logic
+      };
+      
+      res.json(userData);
     } catch (error) {
       console.error("Error fetching user profile:", error);
       res.status(500).json({ error: 'Failed to fetch user profile' });
@@ -97,7 +141,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create submission (authenticated)
-  app.post('/api/submissions', authenticateToken, async (req, res) => {
+  app.post('/api/submissions', isAuthenticated, async (req, res) => {
     const authReq = req as AuthenticatedRequest;
     try {
       const submissionData = insertSubmissionSchema.parse(req.body);
@@ -131,7 +175,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get all submissions (for managers only)
-  app.get('/api/submissions', authenticateToken, requireManager, async (req, res) => {
+  app.get('/api/submissions', isAuthenticated, requireManager, async (req, res) => {
     try {
       const submissions = await storage.getAllSubmissions();
       res.json(submissions);
@@ -146,7 +190,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get current user's submissions
-  app.get('/api/submissions/my', authenticateToken, async (req, res) => {
+  app.get('/api/submissions/my', isAuthenticated, async (req, res) => {
     const authReq = req as AuthenticatedRequest;
     try {
       if (!authReq.user) {
@@ -166,7 +210,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get submission stats (managers only)
-  app.get('/api/stats', authenticateToken, requireManager, async (req, res) => {
+  app.get('/api/stats', isAuthenticated, requireManager, async (req, res) => {
     try {
       const stats = await storage.getSubmissionStats();
       const activeAgents = await storage.getActiveAgentsCount();
@@ -181,59 +225,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Create user (admin only - for setting up the system)
-  app.post('/api/admin/create-user', async (req, res) => {
-    try {
-      const { email, password, firstName, lastName, role = 'agent' } = req.body;
-      
-      if (!email || !password) {
-        return res.status(400).json({ error: 'Email and password are required' });
-      }
-      
-      // Create user in Supabase Auth
-      const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true, // Skip email confirmation
-        user_metadata: {
-          first_name: firstName,
-          last_name: lastName,
-          name: `${firstName} ${lastName}`.trim()
-        }
-      });
-      
-      if (authError) {
-        console.error('Error creating user in Supabase Auth:', authError);
-        return res.status(400).json({ error: authError.message });
-      }
-      
-      // Create user in our database
-      if (authUser.user) {
-        await storage.upsertUser({
-          id: authUser.user.id,
-          email: authUser.user.email || email,
-          firstName: firstName || '',
-          lastName: lastName || '',
-          role: role as 'agent' | 'manager'
-        });
-      }
-      
-      res.json({ 
-        message: 'User created successfully',
-        user: {
-          id: authUser.user?.id,
-          email: authUser.user?.email,
-          role
-        }
-      });
-    } catch (error) {
-      console.error("Error creating user:", error);
-      res.status(500).json({ 
-        error: 'Failed to create user',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      });
-    }
-  });
+  // User creation is now handled automatically by Replit OAuth
+  // No manual user creation endpoint needed
 
   // Create demo user for testing
   app.post('/api/create-demo-user', async (req, res) => {
