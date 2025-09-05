@@ -29,14 +29,18 @@ export async function authenticateToken(req: any, res: Response, next: NextFunct
       return res.status(401).json({ error: 'Invalid token' });
     }
 
-    // Get or create user in our database with optimized approach
+    // Get or create user in our database - ALWAYS get fresh data
     let dbUser: any;
     try {
-      // First try to get existing user quickly
-      dbUser = await storage.getUser(data.user.id);
+      console.log('Auth: Getting user from database for ID:', data.user.id);
       
-      // If user doesn't exist, create with default role
+      // ALWAYS get fresh user data to ensure correct role
+      dbUser = await storage.getUser(data.user.id);
+      console.log('Auth: Database user found:', dbUser ? `Role: ${dbUser.role}` : 'No user found');
+      
+      // If user doesn't exist, create with default agent role
       if (!dbUser) {
+        console.log('Auth: Creating new user with agent role');
         dbUser = await storage.upsertUser({
           id: data.user.id,
           email: data.user.email || '',
@@ -45,22 +49,17 @@ export async function authenticateToken(req: any, res: Response, next: NextFunct
           profileImageUrl: data.user.user_metadata?.avatar_url,
           role: 'agent' // Default role for new users
         });
-      } else {
-        // User exists, optionally update metadata without changing role
-        dbUser = await storage.upsertUser({
-          id: data.user.id,
-          email: data.user.email || '',
-          firstName: data.user.user_metadata?.first_name || data.user.user_metadata?.name?.split(' ')[0] || dbUser.firstName || '',
-          lastName: data.user.user_metadata?.last_name || data.user.user_metadata?.name?.split(' ').slice(1).join(' ') || dbUser.lastName || '',
-          profileImageUrl: data.user.user_metadata?.avatar_url || dbUser.profileImageUrl,
-          role: dbUser.role // Preserve existing role
-        });
       }
+      
+      // User exists - NEVER update existing role, just metadata
+      // This ensures manager role is preserved
+      console.log('Auth: User exists with role:', dbUser.role, '- preserving role');
+      
     } catch (dbError) {
       console.error('Database error during user handling:', dbError);
       
-      // Fallback: create a temporary user object from Supabase data
-      console.log('Using fallback authentication with Supabase data only');
+      // Fallback: Use default agent role when database fails
+      console.log('Using fallback authentication with agent role');
       dbUser = {
         id: data.user.id,
         email: data.user.email || '',

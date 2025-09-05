@@ -53,40 +53,60 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
       console.log('Loading set to false, user should see dashboard now');
       
-      // Immediately try to sync with backend to get the correct role
+      // CRITICAL: Immediately fetch correct role from database
       const syncWithBackend = async () => {
         try {
           const token = await getAccessToken();
           if (token) {
             console.log('Background: Fetching correct role from database...');
-            const response = await fetch('/api/user/profile', {
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-              },
-            });
+            
+            // Retry mechanism for role fetching
+            let attempts = 0;
+            const maxAttempts = 3;
+            
+            while (attempts < maxAttempts) {
+              try {
+                const response = await fetch('/api/user/profile', {
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                  },
+                  cache: 'no-cache'
+                });
 
-            if (response.ok) {
-              const backendUser = await response.json();
-              console.log('Background: Backend user profile received:', backendUser);
+                if (response.ok) {
+                  const backendUser = await response.json();
+                  console.log('Background: Backend user profile received:', backendUser);
+                  
+                  // Update user with correct role from database
+                  const updatedUserData = {
+                    id: backendUser.id,
+                    email: backendUser.email,
+                    firstName: backendUser.firstName || tempUserData.firstName,
+                    lastName: backendUser.lastName || tempUserData.lastName,
+                    role: backendUser.role as 'agent' | 'manager'
+                  };
+                  
+                  console.log('Background: Updating user with database role:', updatedUserData);
+                  setUser(updatedUserData);
+                  return; // Success, exit retry loop
+                } else {
+                  console.warn(`Background: Failed to fetch from backend (attempt ${attempts + 1}):`, response.status);
+                }
+              } catch (fetchError) {
+                console.warn(`Background: Network error (attempt ${attempts + 1}):`, fetchError);
+              }
               
-              // Update user with correct role from database
-              const updatedUserData = {
-                id: backendUser.id,
-                email: backendUser.email,
-                firstName: backendUser.firstName || tempUserData.firstName,
-                lastName: backendUser.lastName || tempUserData.lastName,
-                role: backendUser.role as 'agent' | 'manager'
-              };
-              
-              console.log('Background: Updating user with database role:', updatedUserData);
-              setUser(updatedUserData);
-            } else {
-              console.log('Background: Failed to fetch from backend, keeping initial role');
+              attempts++;
+              if (attempts < maxAttempts) {
+                await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retry
+              }
             }
+            
+            console.error('Background: All attempts failed to fetch role from backend');
           }
         } catch (error) {
-          console.log('Background: Backend sync failed, keeping initial role:', error);
+          console.error('Background: Critical error in role sync:', error);
         }
       };
       
@@ -103,35 +123,56 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let mounted = true;
     let isInitialLoad = true;
     
-    // Set a timeout to prevent infinite loading - reduced to 2 seconds
+    // Set a timeout to prevent infinite loading
     const loadingTimeout = setTimeout(() => {
       if (mounted) {
         console.error('Loading timeout reached, forcing loading to false');
         setLoading(false);
-        setUser(null); // Clear user if stuck loading
+        setUser(null);
       }
-    }, 2000); // 2 second timeout
+    }, 3000);
     
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!mounted) return;
-      
-      console.log('Initial session check:', session?.user ? 'User found' : 'No user');
-      setSupabaseUser(session?.user ?? null);
-      
-      if (session?.user) {
-        fetchUserProfile(session.user, true); // Initial load
-      } else {
-        console.log('No session found, showing login page');
-        setLoading(false);
+    // FORCE CLEAR ALL SESSIONS ON APP START - this ensures users start logged out
+    const clearAllSessions = async () => {
+      try {
+        // Clear all browser storage first
+        localStorage.clear();
+        sessionStorage.clear();
+        
+        // Force sign out any existing session
+        await supabase.auth.signOut({ scope: 'global' });
+        
+        console.log('Forced session clear on app start');
+      } catch (error) {
+        console.warn('Error clearing sessions on start:', error);
       }
-      
-      clearTimeout(loadingTimeout);
-    }).catch((error) => {
+    };
+    
+    // Clear sessions first, then check for session
+    clearAllSessions().then(() => {
       if (!mounted) return;
-      console.error('Error getting initial session:', error);
-      setLoading(false);
-      clearTimeout(loadingTimeout);
+      
+      // Now check for session after clearing
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (!mounted) return;
+        
+        console.log('Initial session check after clear:', session?.user ? 'User found' : 'No user');
+        setSupabaseUser(session?.user ?? null);
+        
+        if (session?.user) {
+          fetchUserProfile(session.user, true);
+        } else {
+          console.log('No session found, showing login page');
+          setLoading(false);
+        }
+        
+        clearTimeout(loadingTimeout);
+      }).catch((error) => {
+        if (!mounted) return;
+        console.error('Error getting session after clear:', error);
+        setLoading(false);
+        clearTimeout(loadingTimeout);
+      });
     });
 
     // Listen for auth changes
