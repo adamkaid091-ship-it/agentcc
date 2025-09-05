@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import type { Submission } from "@shared/schema";
@@ -18,6 +20,7 @@ export default function ManagerDashboard() {
   const [dateFilter, setDateFilter] = useState("all");
   const [activeView, setActiveView] = useState("dashboard");
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [selectedSubmission, setSelectedSubmission] = useState<(Submission & { agentName: string }) | null>(null);
 
   // Fetch real submissions data from API
   const { data: submissions = [], isLoading: submissionsLoading } = useQuery<(Submission & { agentName: string })[]>({
@@ -511,10 +514,338 @@ export default function ManagerDashboard() {
           {activeView === 'submissions' && (
             <div>
               <h2 className="text-2xl font-bold mb-6">All Submissions</h2>
-              <Card>
+              
+              {/* Filters and Search for All Submissions */}
+              <Card className="mb-6">
                 <CardContent className="p-6">
-                  <p className="text-center text-muted-foreground">Detailed submissions view - connect with Supabase to load data</p>
+                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                    <div className="flex flex-col sm:flex-row gap-4 flex-1">
+                      <div className="relative flex-1">
+                        <i className="fas fa-search absolute left-3 top-3 text-muted-foreground"></i>
+                        <Input
+                          placeholder="Search by client name, ATM code..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="pl-10"
+                          data-testid="input-search-all"
+                        />
+                      </div>
+                      <Select value={governmentFilter} onValueChange={setGovernmentFilter}>
+                        <SelectTrigger className="w-full sm:w-auto" data-testid="select-government-filter-all">
+                          <SelectValue placeholder="All Governorates" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Governorates</SelectItem>
+                          <SelectItem value="cairo">Cairo</SelectItem>
+                          <SelectItem value="giza">Giza</SelectItem>
+                          <SelectItem value="alexandria">Alexandria</SelectItem>
+                          <SelectItem value="qalyubia">Qalyubia</SelectItem>
+                          <SelectItem value="port-said">Port Said</SelectItem>
+                          <SelectItem value="suez">Suez</SelectItem>
+                          <SelectItem value="lagos">Lagos</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Select value={typeFilter} onValueChange={setTypeFilter}>
+                        <SelectTrigger className="w-full sm:w-auto" data-testid="select-type-filter-all">
+                          <SelectValue placeholder="All Types" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Types</SelectItem>
+                          <SelectItem value="feeding">تغذية (Feeding)</SelectItem>
+                          <SelectItem value="maintenance">صيانة (Maintenance)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Select value={dateFilter} onValueChange={setDateFilter}>
+                        <SelectTrigger className="w-full sm:w-auto" data-testid="select-date-filter-all">
+                          <SelectValue placeholder="All Time" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Time</SelectItem>
+                          <SelectItem value="today">Today</SelectItem>
+                          <SelectItem value="week">This Week</SelectItem>
+                          <SelectItem value="month">This Month</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="secondary" 
+                        onClick={() => {
+                          setSearchTerm('');
+                          setGovernmentFilter('all');
+                          setTypeFilter('all');
+                          setDateFilter('all');
+                        }}
+                        data-testid="button-clear-filters-all"
+                      >
+                        <i className="fas fa-times mr-2"></i>
+                        Clear
+                      </Button>
+                      <Button 
+                        onClick={() => exportData('csv')}
+                        data-testid="button-export-csv-all"
+                      >
+                        <i className="fas fa-download mr-2"></i>
+                        CSV
+                      </Button>
+                      <Button 
+                        variant="secondary"
+                        onClick={() => exportData('txt')}
+                        data-testid="button-export-txt-all"
+                      >
+                        <i className="fas fa-file-text mr-2"></i>
+                        TXT
+                      </Button>
+                    </div>
+                  </div>
                 </CardContent>
+              </Card>
+
+              {/* All Submissions Table */}
+              <Card className="shadow-sm overflow-hidden">
+                <CardHeader className="pb-4">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg">All Submissions ({filteredSubmissions.length})</CardTitle>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-accent rounded-full animate-pulse"></div>
+                      <span className="text-sm text-muted-foreground">Live from Supabase</span>
+                    </div>
+                  </div>
+                </CardHeader>
+                
+                {submissionsLoading ? (
+                  <CardContent className="p-6">
+                    <div className="text-center text-muted-foreground">
+                      <i className="fas fa-spinner fa-spin mr-2"></i>
+                      Loading submissions...
+                    </div>
+                  </CardContent>
+                ) : (
+                  <>
+                    {/* Desktop Table View */}
+                    <div className="hidden md:block overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-muted hover:bg-muted">
+                            <TableHead>Client</TableHead>
+                            <TableHead>Governorate</TableHead>
+                            <TableHead>ATM Code</TableHead>
+                            <TableHead>Type</TableHead>
+                            <TableHead>Agent</TableHead>
+                            <TableHead>Timestamp</TableHead>
+                            <TableHead>Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredSubmissions.length > 0 ? (
+                            filteredSubmissions.map((submission) => (
+                              <TableRow key={submission.id} className="hover:bg-accent/50 cursor-pointer" data-testid={`row-submission-all-${submission.id}`}>
+                                <TableCell className="font-medium" data-testid={`cell-client-all-${submission.id}`}>
+                                  {submission.clientName}
+                                </TableCell>
+                                <TableCell data-testid={`cell-government-all-${submission.id}`}>
+                                  {submission.government}
+                                </TableCell>
+                                <TableCell className="font-mono" data-testid={`cell-atm-all-${submission.id}`}>
+                                  {submission.atmCode}
+                                </TableCell>
+                                <TableCell>
+                                  <span 
+                                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                      submission.serviceType === 'feeding' 
+                                        ? 'bg-primary/10 text-primary' 
+                                        : 'bg-accent/10 text-accent'
+                                    }`}
+                                    dir="rtl"
+                                    data-testid={`badge-type-all-${submission.id}`}
+                                  >
+                                    {submission.serviceType === 'feeding' ? 'تغذية' : 'صيانة'}
+                                  </span>
+                                </TableCell>
+                                <TableCell data-testid={`cell-agent-all-${submission.id}`}>
+                                  {submission.agentName || 'Unknown'}
+                                </TableCell>
+                                <TableCell data-testid={`cell-timestamp-all-${submission.id}`}>
+                                  {submission.createdAt ? new Date(submission.createdAt).toLocaleString() : 'N/A'}
+                                </TableCell>
+                                <TableCell>
+                                  <Dialog>
+                                    <DialogTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => setSelectedSubmission(submission)}
+                                        data-testid={`button-view-${submission.id}`}
+                                      >
+                                        <i className="fas fa-eye mr-1"></i>
+                                        View
+                                      </Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="max-w-md">
+                                      <DialogHeader>
+                                        <DialogTitle>Submission Details</DialogTitle>
+                                      </DialogHeader>
+                                      {selectedSubmission && (
+                                        <div className="space-y-4">
+                                          <div className="grid grid-cols-2 gap-4 text-sm">
+                                            <div>
+                                              <span className="font-medium text-muted-foreground">Client:</span>
+                                              <p className="font-semibold">{selectedSubmission.clientName}</p>
+                                            </div>
+                                            <div>
+                                              <span className="font-medium text-muted-foreground">Government:</span>
+                                              <p className="font-semibold">{selectedSubmission.government}</p>
+                                            </div>
+                                            <div>
+                                              <span className="font-medium text-muted-foreground">ATM Code:</span>
+                                              <p className="font-mono">{selectedSubmission.atmCode}</p>
+                                            </div>
+                                            <div>
+                                              <span className="font-medium text-muted-foreground">Service Type:</span>
+                                              <span 
+                                                className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ml-1 ${
+                                                  selectedSubmission.serviceType === 'feeding' 
+                                                    ? 'bg-primary/10 text-primary' 
+                                                    : 'bg-accent/10 text-accent'
+                                                }`}
+                                                dir="rtl"
+                                              >
+                                                {selectedSubmission.serviceType === 'feeding' ? 'تغذية' : 'صيانة'}
+                                              </span>
+                                            </div>
+                                            <div>
+                                              <span className="font-medium text-muted-foreground">Agent:</span>
+                                              <p className="font-semibold">{selectedSubmission.agentName || 'Unknown'}</p>
+                                            </div>
+                                            <div>
+                                              <span className="font-medium text-muted-foreground">Submitted:</span>
+                                              <p className="text-sm">{selectedSubmission.createdAt ? new Date(selectedSubmission.createdAt).toLocaleString() : 'N/A'}</p>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </DialogContent>
+                                  </Dialog>
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          ) : (
+                            <TableRow>
+                              <TableCell colSpan={7} className="text-center py-8 text-muted-foreground" data-testid="text-no-submissions-all">
+                                No submissions found
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+                    
+                    {/* Mobile Card View */}
+                    <div className="md:hidden">
+                      <div className="divide-y divide-border">
+                        {filteredSubmissions.length > 0 ? (
+                          filteredSubmissions.map((submission) => (
+                            <Dialog key={submission.id}>
+                              <DialogTrigger asChild>
+                                <div 
+                                  className="p-4 hover:bg-accent/50 transition-colors cursor-pointer" 
+                                  data-testid={`card-mobile-all-${submission.id}`}
+                                  onClick={() => setSelectedSubmission(submission)}
+                                >
+                                  <div className="flex items-start justify-between mb-3">
+                                    <div className="flex-1">
+                                      <h4 className="font-semibold text-card-foreground" data-testid={`mobile-client-all-${submission.id}`}>
+                                        {submission.clientName}
+                                      </h4>
+                                      <p className="text-sm text-muted-foreground" data-testid={`mobile-government-all-${submission.id}`}>
+                                        {submission.government}
+                                      </p>
+                                    </div>
+                                    <div 
+                                      className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                        submission.serviceType === 'feeding' 
+                                          ? 'bg-primary/10 text-primary' 
+                                          : 'bg-accent/10 text-accent'
+                                      }`}
+                                      dir="rtl"
+                                      data-testid={`mobile-type-all-${submission.id}`}
+                                    >
+                                      {submission.serviceType === 'feeding' ? 'تغذية' : 'صيانة'}
+                                    </div>
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-3 text-sm">
+                                    <div>
+                                      <span className="text-muted-foreground">ATM Code:</span>
+                                      <span className="ml-1 font-mono" data-testid={`mobile-atm-all-${submission.id}`}>
+                                        {submission.atmCode}
+                                      </span>
+                                    </div>
+                                    <div>
+                                      <span className="text-muted-foreground">Agent:</span>
+                                      <span className="ml-1" data-testid={`mobile-agent-all-${submission.id}`}>
+                                        {submission.agentName || 'Unknown'}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <div className="mt-3 text-xs text-muted-foreground" data-testid={`mobile-time-all-${submission.id}`}>
+                                    <i className="fas fa-clock mr-1"></i>
+                                    {submission.createdAt ? new Date(submission.createdAt).toLocaleString() : 'N/A'}
+                                  </div>
+                                </div>
+                              </DialogTrigger>
+                              <DialogContent className="max-w-md">
+                                <DialogHeader>
+                                  <DialogTitle>Submission Details</DialogTitle>
+                                </DialogHeader>
+                                <div className="space-y-4">
+                                  <div className="grid grid-cols-2 gap-4 text-sm">
+                                    <div>
+                                      <span className="font-medium text-muted-foreground">Client:</span>
+                                      <p className="font-semibold">{submission.clientName}</p>
+                                    </div>
+                                    <div>
+                                      <span className="font-medium text-muted-foreground">Government:</span>
+                                      <p className="font-semibold">{submission.government}</p>
+                                    </div>
+                                    <div>
+                                      <span className="font-medium text-muted-foreground">ATM Code:</span>
+                                      <p className="font-mono">{submission.atmCode}</p>
+                                    </div>
+                                    <div>
+                                      <span className="font-medium text-muted-foreground">Service Type:</span>
+                                      <span 
+                                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ml-1 ${
+                                          submission.serviceType === 'feeding' 
+                                            ? 'bg-primary/10 text-primary' 
+                                            : 'bg-accent/10 text-accent'
+                                        }`}
+                                        dir="rtl"
+                                      >
+                                        {submission.serviceType === 'feeding' ? 'تغذية' : 'صيانة'}
+                                      </span>
+                                    </div>
+                                    <div>
+                                      <span className="font-medium text-muted-foreground">Agent:</span>
+                                      <p className="font-semibold">{submission.agentName || 'Unknown'}</p>
+                                    </div>
+                                    <div>
+                                      <span className="font-medium text-muted-foreground">Submitted:</span>
+                                      <p className="text-sm">{submission.createdAt ? new Date(submission.createdAt).toLocaleString() : 'N/A'}</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              </DialogContent>
+                            </Dialog>
+                          ))
+                        ) : (
+                          <div className="p-4 text-center text-muted-foreground" data-testid="mobile-no-submissions-all">
+                            No submissions found
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
               </Card>
             </div>
           )}
@@ -523,8 +854,18 @@ export default function ManagerDashboard() {
             <div>
               <h2 className="text-2xl font-bold mb-6">Field Agents</h2>
               <Card>
-                <CardContent className="p-6">
-                  <p className="text-center text-muted-foreground">Agent management view - connect with Supabase to load data</p>
+                <CardContent className="p-12">
+                  <div className="text-center">
+                    <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <i className="fas fa-users text-primary text-2xl"></i>
+                    </div>
+                    <h3 className="text-xl font-semibold text-card-foreground mb-2">Coming Soon</h3>
+                    <p className="text-muted-foreground">Agent management features are under development and will be available soon.</p>
+                    <div className="mt-6 flex items-center justify-center text-sm text-muted-foreground">
+                      <div className="w-2 h-2 bg-primary rounded-full animate-pulse mr-2"></div>
+                      In development
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -534,8 +875,18 @@ export default function ManagerDashboard() {
             <div>
               <h2 className="text-2xl font-bold mb-6">Reports & Analytics</h2>
               <Card>
-                <CardContent className="p-6">
-                  <p className="text-center text-muted-foreground">Advanced reporting view - connect with Supabase to load data</p>
+                <CardContent className="p-12">
+                  <div className="text-center">
+                    <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <i className="fas fa-chart-bar text-primary text-2xl"></i>
+                    </div>
+                    <h3 className="text-xl font-semibold text-card-foreground mb-2">Coming Soon</h3>
+                    <p className="text-muted-foreground">Advanced analytics and reporting features are under development and will be available soon.</p>
+                    <div className="mt-6 flex items-center justify-center text-sm text-muted-foreground">
+                      <div className="w-2 h-2 bg-primary rounded-full animate-pulse mr-2"></div>
+                      In development
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </div>
