@@ -24,7 +24,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [supabaseUser, setSupabaseUser] = useState<SupabaseUser | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const getAccessToken = async (): Promise<string | null> => {
     const { data } = await supabase.auth.getSession();
@@ -33,8 +33,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchUserProfile = async (supabaseUser: SupabaseUser) => {
     try {
+      setLoading(true);
       const token = await getAccessToken();
       if (!token) {
+        console.error('No access token available');
+        setUser(null);
         setLoading(false);
         return;
       }
@@ -49,11 +52,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (response.ok) {
         const userData = await response.json();
         setUser(userData);
+        console.log('User profile loaded:', userData);
       } else {
-        console.error('Failed to fetch user profile:', response.status);
+        console.error('Failed to fetch user profile:', response.status, await response.text());
+        setUser(null);
       }
     } catch (error) {
       console.error('Error fetching user profile:', error);
+      setUser(null);
     } finally {
       setLoading(false);
     }
@@ -62,24 +68,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Initial session:', session?.user ? 'User found' : 'No user');
       setSupabaseUser(session?.user ?? null);
       if (session?.user) {
         fetchUserProfile(session.user);
       } else {
         setLoading(false);
       }
-    }).catch(() => {
+    }).catch((error) => {
+      console.error('Error getting initial session:', error);
       setLoading(false);
     });
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state changed:', event, session?.user ? 'User found' : 'No user');
         setSupabaseUser(session?.user ?? null);
         
-        if (session?.user) {
+        if (event === 'SIGNED_IN' && session?.user) {
           await fetchUserProfile(session.user);
-        } else {
+        } else if (event === 'SIGNED_OUT') {
           setUser(null);
           setLoading(false);
         }

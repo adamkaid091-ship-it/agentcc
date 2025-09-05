@@ -23,22 +23,32 @@ export function LoginForm() {
     e.preventDefault();
     setIsLoading(true);
 
-    const { error } = await signIn(signInData.email, signInData.password);
-    
-    if (error) {
+    try {
+      const { error } = await signIn(signInData.email, signInData.password);
+      
+      if (error) {
+        toast({
+          title: "Login Failed",
+          description: error,
+          variant: "destructive",
+        });
+        setIsLoading(false);
+      } else {
+        toast({
+          title: "Welcome Back!",
+          description: "You have been successfully logged in.",
+        });
+        // Don't set loading to false here - let AuthContext handle it
+        // after successful authentication and profile fetch
+      }
+    } catch (error) {
       toast({
-        title: "Login Failed",
-        description: error,
+        title: "Login Error",
+        description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
-    } else {
-      toast({
-        title: "Welcome Back!",
-        description: "You have been successfully logged in.",
-      });
+      setIsLoading(false);
     }
-    
-    setIsLoading(false);
   };
 
 

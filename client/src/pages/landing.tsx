@@ -43,12 +43,14 @@ export default function Landing() {
           description: error,
           variant: "destructive",
         });
+        setIsLoading(false);
       } else {
         toast({
           title: "Login Successful",
           description: "Welcome to Field Agent System!",
         });
-        // Navigation will be handled by AuthContext/App.tsx based on user role
+        // Don't set loading to false here - let AuthContext handle it
+        // after successful authentication and profile fetch
       }
     } catch (error) {
       toast({
@@ -56,9 +58,8 @@ export default function Landing() {
         description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
+      setIsLoading(false);
     }
-    
-    setIsLoading(false);
   };
 
   return (
