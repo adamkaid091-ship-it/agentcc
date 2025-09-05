@@ -157,6 +157,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Create demo user for testing
+  app.post('/api/create-demo-user', async (req, res) => {
+    try {
+      const demoUser = await storage.upsertUser({
+        id: 'demo-agent',
+        email: 'demo@example.com',
+        firstName: 'Demo',
+        lastName: 'Agent',
+        role: 'agent'
+      });
+      res.json(demoUser);
+    } catch (error) {
+      console.error("Error creating demo user:", error);
+      res.status(500).json({ 
+        status: 'error', 
+        message: 'Failed to create demo user',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
