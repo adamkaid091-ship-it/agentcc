@@ -73,17 +73,10 @@ app.use((req, res, next) => {
       serveStatic(app);
     }
 
-    // For Vercel serverless, don't start the server if we're in a serverless environment
-    if (process.env.VERCEL) {
-      console.log("Vercel environment detected, exporting app for serverless...");
-      module.exports = app;
-      return;
-    }
+    // For Railway deployment, always start the server normally
+    console.log("Starting server for Railway deployment...");
 
-    // ALWAYS serve the app on the port specified in the environment variable PORT
-    // Other ports are firewalled. Default to 5000 if not specified.
-    // this serves both the API and the client.
-    // It is the only port that is not firewalled.
+    // Railway provides PORT via environment variable, fallback to 5000 for local dev
     const port = parseInt(process.env.PORT || '5000', 10);
     server.listen({
       port,
