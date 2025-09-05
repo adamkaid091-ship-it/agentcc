@@ -28,37 +28,6 @@ export default function ManagerDashboard() {
   // Fetch real submissions data from API (manager only)
   const { data: submissions = [], isLoading: submissionsLoading, refetch: refetchSubmissions } = useQuery<(Submission & { agentName: string })[]>({
     queryKey: ['/api/submissions'],
-    queryFn: async () => {
-      try {
-        const token = await getAccessToken();
-        console.log('Manager fetching ALL submissions with token:', token ? 'Available' : 'Missing');
-        
-        if (!token) {
-          console.error('No token available for manager submissions');
-          throw new Error('Authentication token not available');
-        }
-
-        console.log('Manager fetching all submissions from all agents...');
-        const response = await fetch('/api/submissions', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('All submissions fetch failed:', response.status, errorText);
-          throw new Error(`Failed to fetch all submissions: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        console.log('Manager all submissions loaded:', data.length, 'submissions from all agents');
-        return data;
-      } catch (error) {
-        console.error('Manager all submissions query error:', error);
-        throw error;
-      }
-    },
     enabled: user?.role === 'manager',
     staleTime: 0, // Always fetch fresh data
     refetchOnWindowFocus: true,
@@ -74,37 +43,6 @@ export default function ManagerDashboard() {
     activeAgents: number;
   }>({
     queryKey: ['/api/stats'],
-    queryFn: async () => {
-      try {
-        const token = await getAccessToken();
-        console.log('Manager fetching stats with token:', token ? 'Available' : 'Missing');
-        
-        if (!token) {
-          console.error('No token available for manager stats');
-          throw new Error('Authentication token not available');
-        }
-
-        console.log('Manager fetching stats...');
-        const response = await fetch('/api/stats', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('Stats fetch failed:', response.status, errorText);
-          throw new Error(`Failed to fetch stats: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        console.log('Manager stats loaded:', data);
-        return data;
-      } catch (error) {
-        console.error('Manager stats query error:', error);
-        throw error;
-      }
-    },
     enabled: user?.role === 'manager',
     staleTime: 0, // Always fetch fresh data
     refetchOnWindowFocus: true,
