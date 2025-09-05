@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { db } from "./db";
 import { sql } from "drizzle-orm";
 import { storage } from "./storage";
-import { insertSubmissionSchema } from "@shared/schema";
+import { insertSubmissionSchema, submissions } from "@shared/schema";
 import { z } from "zod";
 import { authenticateToken, requireManager, type AuthenticatedRequest } from "./auth";
 import { supabaseAdmin } from "./supabase";
