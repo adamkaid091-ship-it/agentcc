@@ -6,6 +6,7 @@ import * as schema from "@shared/schema";
 const databaseUrl = process.env.POSTGRES_URL || process.env.DATABASE_URL;
 
 if (!databaseUrl) {
+  console.error("Environment variables available:", Object.keys(process.env).filter(key => key.includes('DATABASE') || key.includes('POSTGRES')));
   throw new Error(
     "DATABASE_URL or POSTGRES_URL must be set. For Vercel deployment with Supabase, use POSTGRES_URL with IPv4-compatible pooler connection string.",
   );

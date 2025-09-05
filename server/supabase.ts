@@ -5,10 +5,12 @@ const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
+  console.error("Available environment variables:", Object.keys(process.env).filter(key => key.includes('SUPABASE')));
   throw new Error(`Missing Supabase environment variables: URL=${!!supabaseUrl}, ANON_KEY=${!!supabaseAnonKey}`);
 }
 
 if (!supabaseServiceKey) {
+  console.error("Available environment variables:", Object.keys(process.env).filter(key => key.includes('SUPABASE')));
   throw new Error('Missing SUPABASE_SERVICE_ROLE_KEY environment variable');
 }
 
