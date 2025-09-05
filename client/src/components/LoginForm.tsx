@@ -1,56 +1,11 @@
-import { useState } from 'react';
+import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
-import { Eye, EyeOff, LogIn } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { LogIn } from 'lucide-react';
 
 export function LoginForm() {
   const { signIn, loading } = useAuth();
-  const { toast } = useToast();
-  
-  const [signInData, setSignInData] = useState({
-    email: '',
-    password: '',
-  });
-  
-  const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    try {
-      const { error } = await signIn(signInData.email, signInData.password);
-      
-      if (error) {
-        toast({
-          title: "Login Failed",
-          description: error,
-          variant: "destructive",
-        });
-        setIsLoading(false);
-      } else {
-        toast({
-          title: "Welcome Back!",
-          description: "You have been successfully logged in.",
-        });
-        // Don't set loading to false here - let AuthContext handle it
-        // after successful authentication and profile fetch
-      }
-    } catch (error) {
-      toast({
-        title: "Login Error",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive",
-      });
-      setIsLoading(false);
-    }
-  };
-
 
   if (loading) {
     return (
@@ -71,72 +26,22 @@ export function LoginForm() {
             Field Agent System
           </CardTitle>
           <CardDescription className="text-gray-600 dark:text-gray-400">
-            Sign in to access your dashboard
+            Sign in with your Replit account
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <form onSubmit={handleSignIn} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium">Email Address</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="Enter your email address"
-                value={signInData.email}
-                onChange={(e) => setSignInData({ ...signInData, email: e.target.value })}
-                required
-                className="h-11"
-                data-testid="input-signin-email"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm font-medium">Password</Label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password"
-                  value={signInData.password}
-                  onChange={(e) => setSignInData({ ...signInData, password: e.target.value })}
-                  required
-                  className="h-11 pr-10"
-                  data-testid="input-signin-password"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-0 top-0 h-11 w-11 hover:bg-transparent"
-                  onClick={() => setShowPassword(!showPassword)}
-                  data-testid="button-toggle-password"
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4 text-gray-500" />
-                  ) : (
-                    <Eye className="h-4 w-4 text-gray-500" />
-                  )}
-                </Button>
-              </div>
-            </div>
-            <Button 
-              type="submit" 
-              className="w-full h-11 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium" 
-              disabled={isLoading}
-              data-testid="button-signin-submit"
-            >
-              {isLoading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
-                  Signing in...
-                </>
-              ) : (
-                <>
-                  <LogIn className="mr-2 h-4 w-4" />
-                  Sign In
-                </>
-              )}
-            </Button>
-          </form>
+          <Button
+            onClick={signIn}
+            className="w-full h-12 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium transition-all duration-200 transform hover:scale-[1.02]"
+            data-testid="button-signin-replit"
+          >
+            <LogIn className="w-5 h-5 mr-2" />
+            Sign in with Replit
+          </Button>
+          
+          <div className="text-center text-sm text-gray-500 dark:text-gray-400">
+            <p>Secure authentication powered by Replit OAuth</p>
+          </div>
         </CardContent>
       </Card>
     </div>
