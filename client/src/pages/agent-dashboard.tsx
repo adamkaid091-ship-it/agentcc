@@ -182,6 +182,7 @@ export default function AgentDashboard() {
                     <p className="text-3xl font-bold text-blue-800" data-testid="text-today-visits">
                       {submissions.filter(s => {
                         const today = new Date();
+                        if (!s.createdAt) return false;
                         const submissionDate = new Date(s.createdAt);
                         return submissionDate.toDateString() === today.toDateString();
                       }).length}

@@ -13,6 +13,7 @@ export async function apiRequest(
   data?: unknown | undefined,
   token?: string | null,
 ): Promise<Response> {
+  console.log(`API Request: ${method} ${url}`, data);
   const headers: Record<string, string> = {};
   
   if (data) {
@@ -21,17 +22,33 @@ export async function apiRequest(
   
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
+    console.log('API Request: Token provided');
+  } else {
+    console.log('API Request: No token');
   }
 
-  const res = await fetch(url, {
-    method,
-    headers,
-    body: data ? JSON.stringify(data) : undefined,
-    credentials: "include",
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
 
-  await throwIfResNotOk(res);
-  return res;
+  try {
+    const res = await fetch(url, {
+      method,
+      headers,
+      body: data ? JSON.stringify(data) : undefined,
+      credentials: "include",
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+    console.log(`API Response: ${res.status} for ${method} ${url}`);
+    
+    await throwIfResNotOk(res);
+    return res;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    console.error(`API Request failed: ${method} ${url}`, error);
+    throw error;
+  }
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
