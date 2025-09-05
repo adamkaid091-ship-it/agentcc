@@ -12,16 +12,16 @@ if (!databaseUrl) {
   );
 }
 
-// Use IPv4-compatible connection with optimized settings for serverless
+// Create a simpler, more reliable connection configuration
 const client = postgres(databaseUrl, {
   ssl: 'require',
-  max: 1, // Reduced for serverless environments
-  idle_timeout: 20,
-  connect_timeout: 10, // Reduced timeout for faster failures
+  max: 1, // Single connection to avoid pool issues
+  idle_timeout: 10,
+  connect_timeout: 3,
   prepare: false, // Disable prepared statements for pooler compatibility
   connection: {
     application_name: 'atm-service-portal',
-    statement_timeout: 10000, // 10 second statement timeout
+    statement_timeout: 3000, // 3 second timeout
   },
   onnotice: () => {}, // Suppress notices
   transform: {
@@ -30,3 +30,15 @@ const client = postgres(databaseUrl, {
 });
 
 export const db = drizzle(client, { schema });
+
+// Test connection function
+export async function testConnection() {
+  try {
+    await client`SELECT 1 as test`;
+    console.log('Database connection test successful');
+    return true;
+  } catch (error) {
+    console.error('Database connection test failed:', error);
+    return false;
+  }
+}

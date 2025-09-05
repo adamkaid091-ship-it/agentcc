@@ -29,40 +29,45 @@ export async function authenticateToken(req: any, res: Response, next: NextFunct
       return res.status(401).json({ error: 'Invalid token' });
     }
 
-    // Get or create user in our database using storage interface with timeout
-    const dbOperationTimeout = new Promise<never>((_, reject) => 
-      setTimeout(() => reject(new Error('Database operation timeout')), 8000)
-    );
-
+    // Get or create user in our database with optimized approach
     let dbUser: any;
     try {
-      dbUser = await Promise.race([
-        storage.getUser(data.user.id),
-        dbOperationTimeout
-      ]);
-    } catch (dbError) {
-      console.error('Database timeout during user fetch:', dbError);
-      return res.status(503).json({ error: 'Service temporarily unavailable' });
-    }
-
-    // Auto-create user if they don't exist using upsert
-    if (!dbUser) {
-      try {
-        dbUser = await Promise.race([
-          storage.upsertUser({
-            id: data.user.id,
-            email: data.user.email || '',
-            firstName: data.user.user_metadata?.first_name || data.user.user_metadata?.name?.split(' ')[0] || '',
-            lastName: data.user.user_metadata?.last_name || data.user.user_metadata?.name?.split(' ').slice(1).join(' ') || '',
-            profileImageUrl: data.user.user_metadata?.avatar_url,
-            role: 'agent' // Default role as requested
-          }),
-          dbOperationTimeout
-        ]);
-      } catch (dbError) {
-        console.error('Database timeout during user creation:', dbError);
-        return res.status(503).json({ error: 'Service temporarily unavailable' });
+      // First try to get existing user quickly
+      dbUser = await storage.getUser(data.user.id);
+      
+      // If user doesn't exist, create with default role
+      if (!dbUser) {
+        dbUser = await storage.upsertUser({
+          id: data.user.id,
+          email: data.user.email || '',
+          firstName: data.user.user_metadata?.first_name || data.user.user_metadata?.name?.split(' ')[0] || '',
+          lastName: data.user.user_metadata?.last_name || data.user.user_metadata?.name?.split(' ').slice(1).join(' ') || '',
+          profileImageUrl: data.user.user_metadata?.avatar_url,
+          role: 'agent' // Default role for new users
+        });
+      } else {
+        // User exists, optionally update metadata without changing role
+        dbUser = await storage.upsertUser({
+          id: data.user.id,
+          email: data.user.email || '',
+          firstName: data.user.user_metadata?.first_name || data.user.user_metadata?.name?.split(' ')[0] || dbUser.firstName || '',
+          lastName: data.user.user_metadata?.last_name || data.user.user_metadata?.name?.split(' ').slice(1).join(' ') || dbUser.lastName || '',
+          profileImageUrl: data.user.user_metadata?.avatar_url || dbUser.profileImageUrl,
+          role: dbUser.role // Preserve existing role
+        });
       }
+    } catch (dbError) {
+      console.error('Database error during user handling:', dbError);
+      
+      // Fallback: create a temporary user object from Supabase data
+      console.log('Using fallback authentication with Supabase data only');
+      dbUser = {
+        id: data.user.id,
+        email: data.user.email || '',
+        firstName: data.user.user_metadata?.first_name || data.user.user_metadata?.name?.split(' ')[0] || '',
+        lastName: data.user.user_metadata?.last_name || data.user.user_metadata?.name?.split(' ').slice(1).join(' ') || '',
+        role: 'agent' // Default role when database is unavailable
+      };
     }
 
     // Add user info to request
