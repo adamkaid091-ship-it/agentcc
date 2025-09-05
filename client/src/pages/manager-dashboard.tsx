@@ -53,7 +53,7 @@ export default function ManagerDashboard() {
       console.log('Manager submissions loaded:', data.length, 'submissions');
       return data;
     },
-    enabled: user?.role === 'manager',
+    enabled: !!user, // Enable for any authenticated user, the API will handle role checking
     staleTime: 0, // Always fetch fresh data
     refetchOnWindowFocus: true,
     retry: 3, // Retry failed requests
@@ -93,7 +93,7 @@ export default function ManagerDashboard() {
       console.log('Manager stats loaded:', data);
       return data;
     },
-    enabled: user?.role === 'manager',
+    enabled: !!user, // Enable for any authenticated user, the API will handle role checking
     staleTime: 0, // Always fetch fresh data
     refetchOnWindowFocus: true,
     retry: 3, // Retry failed requests

@@ -42,7 +42,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email: email,
         firstName: supabaseUser.user_metadata?.first_name || supabaseUser.user_metadata?.name?.split(' ')[0] || '',
         lastName: supabaseUser.user_metadata?.last_name || supabaseUser.user_metadata?.name?.split(' ').slice(1).join(' ') || '',
-        role: 'agent' as const // Default to agent initially
+        role: 'agent' as const // Default to agent initially, will be updated from backend
       };
       
       console.log('Setting initial user data:', tempUserData);
@@ -52,8 +52,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
       console.log('Loading set to false, user should see dashboard now');
       
-      // Then, in the background, sync with backend to get the correct role
-      setTimeout(async () => {
+      // Immediately try to sync with backend to get the correct role
+      const syncWithBackend = async () => {
         try {
           const token = await getAccessToken();
           if (token) {
@@ -87,7 +87,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } catch (error) {
           console.log('Background: Backend sync failed, keeping initial role:', error);
         }
-      }, 100); // Small delay to let UI load first
+      };
+      
+      // Call immediately
+      syncWithBackend();
       
     } catch (error) {
       console.error('Error in fetchUserProfile:', error);
