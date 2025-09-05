@@ -34,7 +34,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const fetchUserProfile = async (supabaseUser: SupabaseUser) => {
     try {
       const token = await getAccessToken();
-      if (!token) return;
+      if (!token) {
+        setLoading(false);
+        return;
+      }
 
       const response = await fetch('/api/user/profile', {
         headers: {
@@ -49,6 +52,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error) {
       console.error('Error fetching user profile:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -61,6 +66,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         setLoading(false);
       }
+    }).catch((error) => {
+      console.error('Error getting session:', error);
+      setLoading(false);
     });
 
     // Listen for auth changes
