@@ -87,17 +87,6 @@ app.use((req, res, next) => {
     });
   } catch (error) {
     console.error("Failed to start server:", error);
-    if (process.env.VERCEL) {
-      // In Vercel, export a simple error handler
-      module.exports = (req: Request, res: Response) => {
-        res.status(500).json({
-          error: "Server initialization failed",
-          message: error instanceof Error ? error.message : "Unknown error",
-          timestamp: new Date().toISOString()
-        });
-      };
-    } else {
-      process.exit(1);
-    }
+    process.exit(1);
   }
 })();
