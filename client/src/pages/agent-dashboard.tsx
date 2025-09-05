@@ -2,7 +2,9 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/hooks/use-toast";
-import { insertSubmissionSchema, type InsertSubmission } from "@shared/schema";
+import { insertSubmissionSchema, type InsertSubmission, type Submission } from "@shared/schema";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import { Link } from "wouter";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -14,23 +16,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
-type DemoSubmission = {
-  id: string;
-  clientName: string;
-  government: string;
-  atmCode: string;
-  serviceType: "feeding" | "maintenance";
-  agentId: string;
-  createdAt: Date;
-};
+// Remove DemoSubmission type since we're using the real Submission type now
 
 export default function AgentDashboard() {
   const { toast } = useToast();
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [submissions, setSubmissions] = useState<DemoSubmission[]>([]);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [submissionsSearch, setSubmissionsSearch] = useState("");
-  const [selectedSubmission, setSelectedSubmission] = useState<DemoSubmission | null>(null);
+  const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
@@ -56,24 +49,41 @@ export default function AgentDashboard() {
     },
   });
 
-  // This will be connected to Supabase later
-  const handleSubmit = (data: InsertSubmission) => {
-    const newSubmission = {
-      id: Date.now().toString(),
-      ...data,
-      agentId: 'demo-agent',
-      createdAt: new Date(),
-    };
-    setSubmissions(prev => [newSubmission, ...prev]);
-    toast({
-      title: "Success",
-      description: "Visit record submitted successfully (demo mode)",
-    });
-    form.reset();
-  };
+  const queryClient = useQueryClient();
+
+  // Fetch agent's submissions
+  const { data: submissions = [], isLoading } = useQuery<Submission[]>({
+    queryKey: ['/api/submissions/agent/demo-agent'],
+  });
+
+  // Create submission mutation
+  const createSubmissionMutation = useMutation({
+    mutationFn: async (data: InsertSubmission) => {
+      const response = await apiRequest('POST', '/api/submissions', data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/submissions/agent/demo-agent'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/submissions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/stats'] });
+      toast({
+        title: "Success",
+        description: "Service report submitted successfully!",
+      });
+      form.reset();
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to submit service report. Please try again.",
+        variant: "destructive",
+      });
+      console.error('Error submitting:', error);
+    }
+  });
 
   const onSubmit = (data: InsertSubmission) => {
-    handleSubmit(data);
+    createSubmissionMutation.mutate(data);
   };
 
   const handleLogout = () => {

@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Link, useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import type { Submission } from "@shared/schema";
 
 export default function ManagerDashboard() {
@@ -16,14 +17,22 @@ export default function ManagerDashboard() {
   const [typeFilter, setTypeFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState("all");
   const [activeView, setActiveView] = useState("dashboard");
-  const [submissions] = useState([]);
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [stats] = useState({
-    total: 0,
-    feeding: 0,
-    maintenance: 0,
-    todayCount: 0,
-    activeAgents: 0
+
+  // Fetch real submissions data from API
+  const { data: submissions = [], isLoading: submissionsLoading } = useQuery<(Submission & { agentName: string })[]>({
+    queryKey: ['/api/submissions'],
+  });
+
+  // Fetch real statistics data from API
+  const { data: stats = { total: 0, feeding: 0, maintenance: 0, todayCount: 0, activeAgents: 0 } } = useQuery<{
+    total: number;
+    feeding: number;
+    maintenance: number;
+    todayCount: number;
+    activeAgents: number;
+  }>({
+    queryKey: ['/api/stats'],
   });
 
   const exportData = (format: 'csv' | 'excel' | 'txt') => {
@@ -73,7 +82,7 @@ export default function ManagerDashboard() {
     }
   }, [toast, setLocation]);
 
-  // This will be connected to Supabase later
+  // Connected to real Supabase database via API
 
   const handleLogout = () => {
     localStorage.removeItem('userRole');
