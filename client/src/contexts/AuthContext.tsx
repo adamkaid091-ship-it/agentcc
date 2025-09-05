@@ -41,7 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                      supabaseUser.user_metadata?.role === 'manager' ||
                      email.endsWith('@company.com'); // Admin emails typically get manager role
     
-    // Bypass API call completely - just use Supabase user data directly
+    // Create user data from Supabase directly (for UI display)
     const userData = {
       id: supabaseUser.id,
       email: email,
@@ -53,6 +53,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     console.log('Role detection - email:', email, 'isManager:', isManager, 'final role:', userData.role);
     console.log('Setting user data:', userData);
     setUser(userData);
+    
+    // Try to sync user with backend database (for database operations)
+    try {
+      const token = await getAccessToken();
+      if (token) {
+        console.log('Syncing user with backend database...');
+        await fetch('/api/user/profile', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        console.log('User synced with backend successfully');
+      }
+    } catch (error) {
+      console.log('Backend sync failed, but user is still authenticated:', error);
+    }
+    
     setLoading(false);
     console.log('Loading set to false, user should see dashboard now');
   };
