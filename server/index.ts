@@ -73,10 +73,10 @@ app.use((req, res, next) => {
       serveStatic(app);
     }
 
-    // For Railway deployment, always start the server normally
-    console.log("Starting server for Railway deployment...");
+    // For cloud deployment, always start the server normally
+    console.log("Starting server for cloud deployment...");
 
-    // Railway provides PORT via environment variable, fallback to 5000 for local dev
+    // Cloud platform provides PORT via environment variable, fallback to 5000 for local dev
     const port = parseInt(process.env.PORT || '5000', 10);
     server.listen({
       port,
